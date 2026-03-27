@@ -1,12 +1,36 @@
 const configuredApiUrl = import.meta.env.VITE_API_URL?.trim();
-const defaultApiUrl = import.meta.env.DEV ? "http://localhost:3000/api" : "/api";
 
 const normalizeApiBaseUrl = (url) =>
   url
     .replace(/\/+(auth|finance|investments|dashboard|habits|goals|admin|feedback)(\/.*)?$/i, "")
     .replace(/\/+$/, "");
 
-export const API_BASE_URL = normalizeApiBaseUrl(configuredApiUrl || defaultApiUrl);
+const resolveApiBaseUrl = () => {
+  if (configuredApiUrl) {
+    return normalizeApiBaseUrl(configuredApiUrl);
+  }
+
+  if (import.meta.env.DEV) {
+    return "http://localhost:3000/api";
+  }
+
+  if (typeof window !== "undefined") {
+    const { hostname, origin } = window.location;
+    const isLocalHost = ["localhost", "127.0.0.1"].includes(hostname);
+
+    if (isLocalHost) {
+      return `${origin}/api`;
+    }
+
+    console.warn(
+      "VITE_API_URL is not configured for production. Requests will fall back to /api on the current domain, which will 404 on Render if the backend is deployed as a separate service."
+    );
+  }
+
+  return "/api";
+};
+
+export const API_BASE_URL = resolveApiBaseUrl();
 
 export const EXPENSE_CATEGORIES = [
   { value: "food", label: "Food & Dining", icon: "Food", color: "#f59e0b" },

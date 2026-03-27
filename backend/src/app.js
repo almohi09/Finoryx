@@ -30,6 +30,10 @@ app.use(cors({
     credentials:true
 }));
 
+app.get("/api/health", (_req, res) => {
+    res.status(200).json({ status: "ok" });
+});
+
 app.use('/api/auth',authRouter);
 app.use("/api/finance",financeRouter);
 app.use("/api/investments",investmentRouter);
