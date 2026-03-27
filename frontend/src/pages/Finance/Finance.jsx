@@ -12,6 +12,26 @@ import ExpenseBreakdown from "../../components/charts/ExpenseBreakdown";
 import toast from "react-hot-toast";
 
 const tabs = ["All", "Income", "Expenses"];
+const today = () => new Date().toISOString().split("T")[0];
+
+const getDefaultForm = (type = "expense", item = null) => {
+  if (type === "income") {
+    return {
+      amount: item?.amount || "",
+      source: item?.source || "salary",
+      date: item?.date ? item.date.split("T")[0] : today(),
+      notes: item?.notes || "",
+    };
+  }
+
+  return {
+    description: item?.description || "",
+    amount: item?.amount || "",
+    category: item?.category || "food",
+    date: item?.date ? item.date.split("T")[0] : today(),
+    notes: item?.notes || "",
+  };
+};
 
 const Finance = () => {
   const [activeTab, setActiveTab] = useState("All");
@@ -20,14 +40,7 @@ const Finance = () => {
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState("expense");
   const [editItem, setEditItem] = useState(null);
-  const [form, setForm] = useState({
-    description: "",
-    amount: "",
-    category: "food",
-    source: "salary",
-    date: new Date().toISOString().split("T")[0],
-    notes: "",
-  });
+  const [form, setForm] = useState(getDefaultForm());
   const [saving, setSaving] = useState(false);
 
   const fetchData = async () => {
@@ -49,28 +62,14 @@ const Finance = () => {
   const openAdd = (type) => {
     setModalType(type);
     setEditItem(null);
-    setForm({
-      description: "",
-      amount: "",
-      category: "food",
-      source: "salary",
-      date: new Date().toISOString().split("T")[0],
-      notes: "",
-    });
+    setForm(getDefaultForm(type));
     setShowModal(true);
   };
 
   const openEdit = (item, type) => {
     setModalType(type);
     setEditItem(item);
-    setForm({
-      description: item.description || "",
-      amount: item.amount || "",
-      category: item.category || "food",
-      source: item.source || "salary",
-      date: item.date ? item.date.split("T")[0] : new Date().toISOString().split("T")[0],
-      notes: item.notes || "",
-    });
+    setForm(getDefaultForm(type, item));
     setShowModal(true);
   };
 
@@ -90,7 +89,6 @@ const Finance = () => {
           date: form.date,
           notes: form.notes,
           source: form.source,
-          description: incomeSourceLabel,
         };
         if (editItem) await financeService.updateIncome(editItem._id, incomePayload);
         else await financeService.addIncome(incomePayload);
