@@ -1,4 +1,4 @@
-import { EXPENSE_CATEGORIES, INCOME_SOURCES } from "../constants";
+import { EXPENSE_CATEGORIES } from "../constants";
 
 export const formatCurrency = (amount, currency = "Rs ") => {
   if (amount === null || amount === undefined) return `${currency}0`;
@@ -51,25 +51,14 @@ export const getCategoryInfo = (value) => {
 };
 
 export const getIncomeSourceInfo = (value) => {
-  const normalizedValue = String(value || "").trim().toLowerCase();
-  const match = INCOME_SOURCES.find(
-    (source) =>
-      source.value === normalizedValue ||
-      source.label.toLowerCase() === normalizedValue
-  );
+  const label = String(value || "").trim();
 
-  return (
-    match || {
-      value,
-      label: value || "Other",
-      icon: "Other",
-      color: "#94a3b8",
-    }
-  );
-};
-
-export const normalizeIncomeSource = (value) => {
-  return getIncomeSourceInfo(value).value || "other";
+  return {
+    value: label || "other",
+    label: label || "Other",
+    icon: "Other",
+    color: "#94a3b8",
+  };
 };
 
 export const getGreeting = () => {

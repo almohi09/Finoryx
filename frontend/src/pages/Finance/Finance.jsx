@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { Plus, Trash2, Pencil } from "lucide-react";
 import { financeService } from "../../services/finance.service";
-import { formatCurrency, formatDate, getCategoryInfo, getIncomeSourceInfo, normalizeIncomeSource } from "../../utils/helpers";
-import { EXPENSE_CATEGORIES, INCOME_SOURCES } from "../../constants";
+import { formatCurrency, formatDate, getCategoryInfo, getIncomeSourceInfo } from "../../utils/helpers";
+import { EXPENSE_CATEGORIES } from "../../constants";
 import Card from "../../components/ui/Card";
 import Button from "../../components/ui/Button";
 import Input from "../../components/ui/Input";
@@ -18,7 +18,7 @@ const getDefaultForm = (type = "expense", item = null) => {
   if (type === "income") {
     return {
       amount: item?.amount || "",
-      source: normalizeIncomeSource(item?.source || "salary"),
+      source: item?.source || "",
       date: item?.date ? item.date.split("T")[0] : today(),
       notes: item?.notes || "",
     };
@@ -87,7 +87,7 @@ const Finance = () => {
           amount: form.amount,
           date: form.date,
           notes: form.notes,
-          source: form.source,
+          source: form.source.trim(),
         };
         if (editItem) await financeService.updateIncome(editItem._id, incomePayload);
         else await financeService.addIncome(incomePayload);
@@ -197,7 +197,7 @@ const Finance = () => {
                   ? getIncomeSourceInfo(tx.source)
                   : getCategoryInfo(tx.category);
                 const detailLabel = tx.type === "income" ? categoryInfo.label : tx.description;
-                const metaLabel = tx.type === "income" ? "Source" : categoryInfo.label;
+                const metaLabel = tx.type === "income" ? "Income" : categoryInfo.label;
                 return (
                   <div key={tx._id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/3 group transition-colors">
                     <span className="text-xl">{categoryInfo.icon}</span>
@@ -245,9 +245,19 @@ const Finance = () => {
             <Input label="Date" type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
           </div>
           {modalType === "expense" ? (
-            <Select label="Category" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} options={EXPENSE_CATEGORIES} />
+            <Select
+              label="Category"
+              value={form.category}
+              onChange={(e) => setForm({ ...form, category: e.target.value })}
+              options={EXPENSE_CATEGORIES}
+            />
           ) : (
-            <Select label="Income Source" value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })} options={INCOME_SOURCES} />
+            <Input
+              label="Income Source"
+              placeholder="e.g. Salary, Freelance, Rental Income"
+              value={form.source}
+              onChange={(e) => setForm({ ...form, source: e.target.value })}
+            />
           )}
           <Input label="Notes (optional)" placeholder="Any additional details" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
           <div className="flex gap-3 pt-2">
