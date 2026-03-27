@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { Plus, Trash2, Pencil } from "lucide-react";
 import { financeService } from "../../services/finance.service";
-import { formatCurrency, formatDate, getCategoryInfo } from "../../utils/helpers";
-import { EXPENSE_CATEGORIES } from "../../constants";
+import { formatCurrency, formatDate, getCategoryInfo, getIncomeSourceInfo } from "../../utils/helpers";
+import { EXPENSE_CATEGORIES, INCOME_SOURCES } from "../../constants";
 import Card from "../../components/ui/Card";
 import Button from "../../components/ui/Button";
 import Input from "../../components/ui/Input";
@@ -24,6 +24,7 @@ const Finance = () => {
     description: "",
     amount: "",
     category: "food",
+    source: "salary",
     date: new Date().toISOString().split("T")[0],
     notes: "",
   });
@@ -52,6 +53,7 @@ const Finance = () => {
       description: "",
       amount: "",
       category: "food",
+      source: "salary",
       date: new Date().toISOString().split("T")[0],
       notes: "",
     });
@@ -65,6 +67,7 @@ const Finance = () => {
       description: item.description || "",
       amount: item.amount || "",
       category: item.category || "food",
+      source: item.source || "salary",
       date: item.date ? item.date.split("T")[0] : new Date().toISOString().split("T")[0],
       notes: item.notes || "",
     });
@@ -83,7 +86,7 @@ const Finance = () => {
           amount: form.amount,
           date: form.date,
           notes: form.notes,
-          source: form.description,
+          source: form.source,
           description: form.description,
         };
         if (editItem) await financeService.updateIncome(editItem._id, incomePayload);
@@ -190,7 +193,9 @@ const Finance = () => {
               {displayed.length === 0 ? (
                 <div className="text-center py-12 muted-text text-sm">No transactions yet</div>
               ) : displayed.map((tx) => {
-                const categoryInfo = getCategoryInfo(tx.category || tx.source);
+                const categoryInfo = tx.type === "income"
+                  ? getIncomeSourceInfo(tx.source)
+                  : getCategoryInfo(tx.category);
                 return (
                   <div key={tx._id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/3 group transition-colors">
                     <span className="text-xl">{categoryInfo.icon}</span>
@@ -232,7 +237,9 @@ const Finance = () => {
           </div>
           {modalType === "expense" ? (
             <Select label="Category" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} options={EXPENSE_CATEGORIES} />
-          ) : null}
+          ) : (
+            <Select label="Income Source" value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })} options={INCOME_SOURCES} />
+          )}
           <Input label="Notes (optional)" placeholder="Any additional details" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
           <div className="flex gap-3 pt-2">
             <Button variant="ghost" className="flex-1" onClick={() => setShowModal(false)}>Cancel</Button>
