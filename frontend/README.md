@@ -1,16 +1,42 @@
-# React + Vite
+# Finoryx Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Local development
 
-Currently, two official plugins are available:
+Create `frontend/.env` with:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```env
+VITE_API_URL=http://localhost:3000/api
+```
 
-## React Compiler
+Then run the frontend and backend separately.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Render deployment
 
-## Expanding the ESLint configuration
+This frontend requires an explicit backend URL in production.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Set this environment variable on the frontend Render service:
+
+```env
+VITE_API_URL=https://your-backend-service.onrender.com/api
+```
+
+Set these environment variables on the backend Render service:
+
+```env
+NODE_ENV=production
+CLIENT_URLS=https://your-frontend-service.onrender.com
+JWT_SECRET=your-secret
+MONGODB_URI=your-mongodb-connection-string
+```
+
+## Why the site can load but still not work
+
+If `VITE_API_URL` is missing, the frontend may deploy successfully but API calls such as login, dashboard, and profile requests will fail in production. The app now surfaces that misconfiguration clearly instead of silently calling the wrong origin.
+
+## Quick verification
+
+After deployment, verify:
+
+1. The frontend opens from the Render URL on desktop and mobile.
+2. `https://your-backend-service.onrender.com/api/health` returns `{"status":"ok"}`.
+3. Browser network requests from the frontend go to your backend Render URL, not to `/api` on the frontend domain.

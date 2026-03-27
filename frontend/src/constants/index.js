@@ -5,32 +5,53 @@ const normalizeApiBaseUrl = (url) =>
     .replace(/\/+(auth|finance|investments|dashboard|habits|goals|admin|feedback)(\/.*)?$/i, "")
     .replace(/\/+$/, "");
 
-const resolveApiBaseUrl = () => {
+const buildApiConfig = () => {
   if (configuredApiUrl) {
-    return normalizeApiBaseUrl(configuredApiUrl);
+    return {
+      apiBaseUrl: normalizeApiBaseUrl(configuredApiUrl),
+      error: "",
+    };
   }
 
   if (import.meta.env.DEV) {
-    return "http://localhost:3000/api";
+    return {
+      apiBaseUrl: "http://localhost:3000/api",
+      error: "",
+    };
   }
 
   if (typeof window !== "undefined") {
-    const { hostname, origin } = window.location;
+    const { hostname } = window.location;
     const isLocalHost = ["localhost", "127.0.0.1"].includes(hostname);
 
     if (isLocalHost) {
-      return `${origin}/api`;
+      return {
+        apiBaseUrl: `${window.location.origin}/api`,
+        error: "",
+      };
     }
-
-    console.warn(
-      "VITE_API_URL is not configured for production. Requests will fall back to /api on the current domain, which will 404 on Render if the backend is deployed as a separate service."
-    );
   }
 
-  return "/api";
+  return {
+    apiBaseUrl: "",
+    error:
+      "Missing VITE_API_URL in production. Set it to your backend Render URL, for example https://your-backend.onrender.com/api.",
+  };
+};
+
+const resolveApiBaseUrl = () => {
+  const { apiBaseUrl, error } = buildApiConfig();
+
+  if (error && typeof console !== "undefined") {
+    console.error(error);
+  }
+
+  return apiBaseUrl;
 };
 
 export const API_BASE_URL = resolveApiBaseUrl();
+export const API_CONFIGURATION_ERROR = buildApiConfig().error;
+export const IS_API_CONFIGURED = !API_CONFIGURATION_ERROR;
 
 export const EXPENSE_CATEGORIES = [
   { value: "food", label: "Food & Dining", icon: "Food", color: "#f59e0b" },

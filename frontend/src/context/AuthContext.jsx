@@ -1,6 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { authService } from "../services/auth.service";
+import { IS_API_CONFIGURED } from "../constants";
 
 const AuthContext = createContext(null);
 
@@ -20,6 +21,11 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
+    if (!IS_API_CONFIGURED) {
+      setLoading(false);
+      return;
+    }
+
     fetchProfile();
   }, [fetchProfile]);
 

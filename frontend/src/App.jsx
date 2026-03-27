@@ -1,8 +1,11 @@
 import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
+import { useEffect } from "react";
+import toast from "react-hot-toast";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AppLayout from "./components/layout/AppLayout";
+import { API_CONFIGURATION_ERROR } from "./constants";
 
 // Pages
 import Login from "./pages/Auth/Login";
@@ -17,6 +20,12 @@ import Admin from "./pages/Admin/Admin";
 import Account from "./pages/Account/Account";
 
 const App = () => {
+  useEffect(() => {
+    if (API_CONFIGURATION_ERROR) {
+      toast.error(API_CONFIGURATION_ERROR, { duration: 7000 });
+    }
+  }, []);
+
   return (
     <AuthProvider>
       <HashRouter>
