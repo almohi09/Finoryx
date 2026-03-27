@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Plus, Trash2, Pencil } from "lucide-react";
 import { financeService } from "../../services/finance.service";
-import { formatCurrency, formatDate, getCategoryInfo, getIncomeSourceInfo } from "../../utils/helpers";
+import { formatCurrency, formatDate, getCategoryInfo, getIncomeSourceInfo, normalizeIncomeSource } from "../../utils/helpers";
 import { EXPENSE_CATEGORIES, INCOME_SOURCES } from "../../constants";
 import Card from "../../components/ui/Card";
 import Button from "../../components/ui/Button";
@@ -18,7 +18,7 @@ const getDefaultForm = (type = "expense", item = null) => {
   if (type === "income") {
     return {
       amount: item?.amount || "",
-      source: item?.source || "salary",
+      source: normalizeIncomeSource(item?.source || "salary"),
       date: item?.date ? item.date.split("T")[0] : today(),
       notes: item?.notes || "",
     };
@@ -83,7 +83,6 @@ const Finance = () => {
         if (editItem) await financeService.updateExpense(editItem._id, form);
         else await financeService.addExpense(form);
       } else {
-        const incomeSourceLabel = INCOME_SOURCES.find((item) => item.value === form.source)?.label || "Other";
         const incomePayload = {
           amount: form.amount,
           date: form.date,
@@ -198,22 +197,23 @@ const Finance = () => {
                   ? getIncomeSourceInfo(tx.source)
                   : getCategoryInfo(tx.category);
                 const detailLabel = tx.type === "income" ? categoryInfo.label : tx.description;
+                const metaLabel = tx.type === "income" ? "Source" : categoryInfo.label;
                 return (
                   <div key={tx._id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/3 group transition-colors">
                     <span className="text-xl">{categoryInfo.icon}</span>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <p className="text-sm font-display font-500 truncate">{detailLabel}</p>
-                        <span className={tx.type === "income" ? "badge-green shrink-0" : "badge-red shrink-0"}>
-                          {tx.type === "income" ? "Income" : "Expense"}
-                        </span>
-                      </div>
-                      <p className="text-xs muted-text">{formatDate(tx.date || tx.createdAt)}</p>
+                      <p className="text-sm font-display font-500 truncate">{detailLabel}</p>
+                      <p className="text-xs muted-text">{metaLabel} | {formatDate(tx.date || tx.createdAt)}</p>
                       {tx.notes ? <p className="text-xs muted-text truncate mt-1">{tx.notes}</p> : null}
                     </div>
-                    <span className={`text-sm font-display font-700 ${tx.type === "income" ? "text-green-400" : "text-red-400"}`}>
-                      {tx.type === "income" ? "+" : "-"}{formatCurrency(tx.amount)}
-                    </span>
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <span className={`text-sm font-display font-700 ${tx.type === "income" ? "text-green-400" : "text-red-400"}`}>
+                        {tx.type === "income" ? "+" : "-"}{formatCurrency(tx.amount)}
+                      </span>
+                      <span className={tx.type === "income" ? "badge-green" : "badge-red"}>
+                        {tx.type === "income" ? "Income" : "Expense"}
+                      </span>
+                    </div>
                     <div className="hidden group-hover:flex gap-1">
                       <button onClick={() => openEdit(tx, tx.type)} className="p-1.5 rounded-lg hover:bg-white/5 muted-text hover:text-white transition-colors">
                         <Pencil size={13} />

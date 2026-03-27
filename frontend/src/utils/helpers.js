@@ -51,14 +51,25 @@ export const getCategoryInfo = (value) => {
 };
 
 export const getIncomeSourceInfo = (value) => {
+  const normalizedValue = String(value || "").trim().toLowerCase();
+  const match = INCOME_SOURCES.find(
+    (source) =>
+      source.value === normalizedValue ||
+      source.label.toLowerCase() === normalizedValue
+  );
+
   return (
-    INCOME_SOURCES.find((source) => source.value === value) || {
+    match || {
       value,
       label: value || "Other",
       icon: "Other",
       color: "#94a3b8",
     }
   );
+};
+
+export const normalizeIncomeSource = (value) => {
+  return getIncomeSourceInfo(value).value || "other";
 };
 
 export const getGreeting = () => {
