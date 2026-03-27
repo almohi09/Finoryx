@@ -425,7 +425,7 @@ const Finance = () => {
                     borderColor: "var(--border)",
                   }}
                 >
-                  <div className="px-4 py-2.5 border-b flex items-center justify-between gap-3" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+                  <div className="px-4 py-2.5 border-b flex flex-wrap items-center justify-between gap-3" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
                     <div className="flex items-center gap-2">
                       <span className={badgeClass}>{tx.type === "income" ? "Income" : "Expense"}</span>
                       <span className="text-xs muted-text">{txDate}</span>
@@ -441,26 +441,28 @@ const Finance = () => {
                   </div>
 
                   <div className="p-4">
-                    <div className="flex items-start gap-4">
-                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${iconClass}`}>
-                        <span className="text-lg">{categoryInfo.icon}</span>
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="text-base font-display font-700 leading-6 break-words">{detailLabel}</p>
-                          <p className="text-xs uppercase tracking-[0.16em] muted-text mt-1 break-words">{metaLabel}</p>
-                          {tx.notes ? <p className="text-sm muted-text mt-3 leading-6 break-words">{tx.notes}</p> : null}
+                    <div className="flex flex-col gap-4">
+                      <div className="flex items-start gap-4">
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${iconClass}`}>
+                          <span className="text-lg">{categoryInfo.icon}</span>
                         </div>
 
-                          <div className="md:text-right shrink-0">
-                            <div className={`text-xl font-display font-800 ${amountClass}`}>
-                              {tx.type === "income" ? "+" : "-"}{formatCurrency(tx.amount)}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="text-base font-display font-700 leading-6 break-words">{detailLabel}</p>
+                              <p className="text-xs uppercase tracking-[0.16em] muted-text mt-1 break-words">{metaLabel}</p>
+                              {tx.notes ? <p className="text-sm muted-text mt-3 leading-6 break-words">{tx.notes}</p> : null}
                             </div>
-                            <p className="text-xs muted-text mt-1">
-                              {tx.type === "income" ? "Added to cash flow" : "Reduced cash flow"}
-                            </p>
+
+                            <div className="md:text-right shrink-0">
+                              <div className={`text-xl font-display font-800 ${amountClass}`}>
+                                {tx.type === "income" ? "+" : "-"}{formatCurrency(tx.amount)}
+                              </div>
+                              <p className="text-xs muted-text mt-1">
+                                {tx.type === "income" ? "Added to cash flow" : "Reduced cash flow"}
+                              </p>
+                            </div>
                           </div>
                         </div>
                       </div>
