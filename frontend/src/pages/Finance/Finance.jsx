@@ -448,11 +448,11 @@ const Finance = () => {
 
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
-                          <div className="min-w-0">
-                            <p className="text-base font-display font-700 truncate">{detailLabel}</p>
-                            <p className="text-xs uppercase tracking-[0.16em] muted-text mt-1">{metaLabel}</p>
-                            {tx.notes ? <p className="text-sm muted-text mt-3 leading-6">{tx.notes}</p> : null}
-                          </div>
+                        <div className="min-w-0">
+                          <p className="text-base font-display font-700 leading-6 break-words">{detailLabel}</p>
+                          <p className="text-xs uppercase tracking-[0.16em] muted-text mt-1 break-words">{metaLabel}</p>
+                          {tx.notes ? <p className="text-sm muted-text mt-3 leading-6 break-words">{tx.notes}</p> : null}
+                        </div>
 
                           <div className="md:text-right shrink-0">
                             <div className={`text-xl font-display font-800 ${amountClass}`}>

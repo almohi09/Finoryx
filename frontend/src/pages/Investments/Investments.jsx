@@ -145,34 +145,55 @@ const Investments = () => {
             {investments.length === 0 ? (
               <EmptyState icon="Chart" title="No investments yet" description="Start tracking your portfolio" action={openAdd} actionLabel="Add Investment" />
             ) : (
-              <div className="space-y-2 max-h-96 overflow-y-auto">
+              <div className="grid gap-3 max-h-[34rem] overflow-y-auto pr-1">
                 {investments.map((investment) => {
                   const gain = (investment.currentValue || investment.amount) - investment.amount;
                   const gainP = investment.amount ? ((gain / investment.amount) * 100).toFixed(1) : 0;
                   const typeInfo = INVESTMENT_TYPES.find((type) => type.value === investment.type);
                   return (
-                    <div key={investment._id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/3 group transition-colors border" style={{ borderColor: "var(--border)" }}>
-                      <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-amber-400/10">
-                        <TrendingUp size={15} className="text-amber-400" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-display font-600 truncate">{investment.name}</p>
-                        <p className="text-xs muted-text">{typeInfo?.label || investment.type} | {formatDate(investment.purchaseDate)}</p>
-                        {investment.notes ? <p className="text-xs muted-text truncate mt-1">{investment.notes}</p> : null}
-                      </div>
-                      <div className="text-right">
-                        <div className="text-sm font-display font-700">{formatCurrency(investment.currentValue || investment.amount)}</div>
-                        <div className={`text-xs ${gain >= 0 ? "text-green-400" : "text-red-400"}`}>
-                          {gain >= 0 ? "+" : ""}{formatCurrency(gain)} ({gainP}%)
+                    <div
+                      key={investment._id}
+                      className="group rounded-[1.35rem] border overflow-hidden transition-all hover:-translate-y-[1px]"
+                      style={{
+                        background: "linear-gradient(135deg, rgba(245,158,11,0.08), rgba(255,255,255,0.02) 35%, rgba(255,255,255,0.01))",
+                        borderColor: "var(--border)",
+                      }}
+                    >
+                      <div className="px-4 py-2.5 border-b flex items-center justify-between gap-3" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+                        <div className="flex items-center gap-2">
+                          <span className="badge-gold text-[11px]">{typeInfo?.label || investment.type}</span>
+                          <span className="text-xs muted-text">{formatDate(investment.purchaseDate)}</span>
+                        </div>
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={() => openEdit(investment)} className="p-1.5 rounded-lg hover:bg-white/5 muted-text hover:text-white transition-colors">
+                            <Pencil size={13} />
+                          </button>
+                          <button onClick={() => handleDelete(investment._id)} className="p-1.5 rounded-lg hover:bg-red-500/10 text-red-400 transition-colors">
+                            <Trash2 size={13} />
+                          </button>
                         </div>
                       </div>
-                      <div className="hidden group-hover:flex gap-1">
-                        <button onClick={() => openEdit(investment)} className="p-1.5 rounded-lg hover:bg-white/5 muted-text hover:text-white transition-colors">
-                          <Pencil size={13} />
-                        </button>
-                        <button onClick={() => handleDelete(investment._id)} className="p-1.5 rounded-lg hover:bg-red-500/10 text-red-400 transition-colors">
-                          <Trash2 size={13} />
-                        </button>
+
+                      <div className="p-4 flex items-start gap-4">
+                        <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 bg-amber-400/10">
+                          <TrendingUp size={18} className="text-amber-400" />
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="text-base font-display font-700 leading-6 break-words">{investment.name}</p>
+                              {investment.notes ? <p className="text-sm muted-text mt-3 leading-6 break-words">{investment.notes}</p> : null}
+                            </div>
+
+                            <div className="md:text-right shrink-0">
+                              <div className="text-xl font-display font-800">{formatCurrency(investment.currentValue || investment.amount)}</div>
+                              <div className={`text-xs mt-1 ${gain >= 0 ? "text-green-400" : "text-red-400"}`}>
+                                {gain >= 0 ? "+" : ""}{formatCurrency(gain)} ({gainP}%)
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   );

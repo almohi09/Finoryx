@@ -175,35 +175,65 @@ const Habits = () => {
                 {habits.map((habit) => {
                   const info = typeInfo(habit.type);
                   return (
-                    <div key={habit._id} className={`flex items-center gap-4 p-4 rounded-xl border transition-all group ${habit.completedToday ? "opacity-75" : ""}`} style={{ background: "var(--bg-secondary)", borderColor: habit.completedToday ? "var(--border)" : "var(--border-light)" }}>
-                      <button onClick={() => handleComplete(habit)} disabled={habit.completedToday || completing === habit._id} className="flex-shrink-0 transition-transform hover:scale-110 disabled:cursor-default">
-                        {habit.completedToday ? <CheckCircle2 size={24} className="text-amber-400" /> : <Circle size={24} className="muted-text hover:text-amber-400 transition-colors" />}
-                      </button>
-                      <span className="text-2xl flex-shrink-0">{info.icon}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className={`font-display font-600 truncate ${habit.completedToday ? "line-through muted-text" : ""}`}>{habit.name}</p>
-                        <div className="flex items-center gap-3 mt-1">
+                    <div
+                      key={habit._id}
+                      className={`group rounded-[1.35rem] border overflow-hidden transition-all ${habit.completedToday ? "opacity-80" : "hover:-translate-y-[1px]"}`}
+                      style={{
+                        background: habit.completedToday
+                          ? "linear-gradient(135deg, rgba(245,158,11,0.09), rgba(255,255,255,0.02) 35%, rgba(255,255,255,0.01))"
+                          : "linear-gradient(135deg, rgba(96,165,250,0.08), rgba(255,255,255,0.02) 35%, rgba(255,255,255,0.01))",
+                        borderColor: habit.completedToday ? "rgba(245,158,11,0.18)" : "var(--border-light)",
+                      }}
+                    >
+                      <div className="px-4 py-2.5 border-b flex items-center justify-between gap-3" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="badge-gold text-[11px]">{freqLabel(habit.frequency)}</span>
                           <span className="text-xs muted-text">{info.label}</span>
-                          <span className="badge-gold text-xs">{freqLabel(habit.frequency)}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
                           {habit.streak > 0 ? (
                             <span className="flex items-center gap-1 text-xs text-orange-400">
                               <Flame size={11} />{getStreakLabel(habit.streak)}
                             </span>
-                          ) : null}
+                          ) : <span className="text-xs muted-text">No streak yet</span>}
                         </div>
-                        {habit.description ? <p className="text-xs muted-text truncate mt-1">{habit.description}</p> : null}
                       </div>
-                      <div className="hidden group-hover:flex gap-1 flex-shrink-0">
-                        <button onClick={() => openEdit(habit)} className="p-1.5 rounded-lg hover:bg-white/5 muted-text hover:text-white transition-colors">
-                          <Pencil size={13} />
+
+                      <div className="p-4 flex items-start gap-4">
+                        <button
+                          onClick={() => handleComplete(habit)}
+                          disabled={habit.completedToday || completing === habit._id}
+                          className="flex-shrink-0 transition-transform hover:scale-110 disabled:cursor-default"
+                        >
+                          {habit.completedToday ? <CheckCircle2 size={24} className="text-amber-400" /> : <Circle size={24} className="muted-text hover:text-amber-400 transition-colors" />}
                         </button>
-                        <button onClick={() => handleDelete(habit._id)} className="p-1.5 rounded-lg hover:bg-red-500/10 text-red-400 transition-colors">
-                          <Trash2 size={13} />
-                        </button>
-                      </div>
-                      <div className="text-right flex-shrink-0">
-                        <div className="text-lg font-display font-800">{habit.streak || 0}</div>
-                        <div className="text-xs muted-text">streak</div>
+
+                        <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 bg-white/5 text-2xl">
+                          {info.icon}
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className={`text-base font-display font-700 leading-6 break-words ${habit.completedToday ? "line-through muted-text" : ""}`}>{habit.name}</p>
+                              {habit.description ? <p className="text-sm muted-text mt-3 leading-6 break-words">{habit.description}</p> : null}
+                            </div>
+
+                            <div className="md:text-right shrink-0">
+                              <div className="text-xl font-display font-800">{habit.streak || 0}</div>
+                              <div className="text-xs muted-text">streak days</div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="hidden group-hover:flex gap-1 flex-shrink-0">
+                          <button onClick={() => openEdit(habit)} className="p-1.5 rounded-lg hover:bg-white/5 muted-text hover:text-white transition-colors">
+                            <Pencil size={13} />
+                          </button>
+                          <button onClick={() => handleDelete(habit._id)} className="p-1.5 rounded-lg hover:bg-red-500/10 text-red-400 transition-colors">
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
