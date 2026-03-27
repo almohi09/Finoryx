@@ -6,6 +6,7 @@ import { authService } from "../../services/auth.service";
 import toast from "react-hot-toast";
 import Button from "../../components/ui/Button";
 import Input from "../../components/ui/Input";
+import { setStoredToken } from "../../utils/auth";
 
 const Login = () => {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -30,6 +31,7 @@ const Login = () => {
     setLoading(true);
     try {
       const { data } = await authService.login(form);
+      setStoredToken(data.token);
       login(data.user);
       toast.success(`Welcome back, ${data.user.username}!`);
       navigate("/dashboard");

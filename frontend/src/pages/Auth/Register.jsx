@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import Button from "../../components/ui/Button";
 import Input from "../../components/ui/Input";
 import Select from "../../components/ui/Select";
+import { setStoredToken } from "../../utils/auth";
 
 const GOALS = [
   { value: "save_more", label: "Save more money" },
@@ -57,6 +58,7 @@ const Register = () => {
         password: form.password,
         primaryGoal: form.primaryGoal,
       });
+      setStoredToken(data.token);
       login(data.user);
       toast.success("Account created! Welcome to WealthWise");
       navigate("/dashboard");

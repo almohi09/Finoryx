@@ -2,7 +2,9 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/user.model");
 
 const authUser = async (req, res, next) => {
-  const token = req.cookies.token;
+  const authHeader = req.headers.authorization || "";
+  const bearerToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+  const token = req.cookies.token || bearerToken;
 
   try {
     if (!token) {

@@ -63,8 +63,8 @@ const Goals = () => {
       toast.success(editItem ? "Goal updated!" : "Goal created!");
       setShowModal(false);
       fetchData();
-    } catch {
-      toast.error("Something went wrong");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to save goal");
     } finally {
       setSaving(false);
     }

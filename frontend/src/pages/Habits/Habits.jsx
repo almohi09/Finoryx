@@ -83,8 +83,8 @@ const Habits = () => {
       toast.success(editItem ? "Habit updated!" : "Habit created!");
       setShowModal(false);
       fetchData();
-    } catch {
-      toast.error("Something went wrong");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to save habit");
     } finally {
       setSaving(false);
     }

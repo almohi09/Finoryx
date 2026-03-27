@@ -95,8 +95,8 @@ const Finance = () => {
       toast.success(editItem ? "Updated!" : "Added successfully!");
       setShowModal(false);
       fetchData();
-    } catch {
-      toast.error("Something went wrong");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to save transaction");
     } finally {
       setSaving(false);
     }

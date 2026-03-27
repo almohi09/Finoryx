@@ -60,8 +60,8 @@ const Investments = () => {
       toast.success(editItem ? "Updated!" : "Investment added!");
       setShowModal(false);
       fetchData();
-    } catch {
-      toast.error("Something went wrong");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to save investment");
     } finally {
       setSaving(false);
     }

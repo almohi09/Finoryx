@@ -18,6 +18,25 @@ export const formatDate = (date) => {
   });
 };
 
+export const formatRelativeTime = (date) => {
+  if (!date) return "";
+
+  const timestamp = new Date(date).getTime();
+  if (Number.isNaN(timestamp)) return "";
+
+  const diffMs = timestamp - Date.now();
+  const absMs = Math.abs(diffMs);
+  const minutes = Math.round(absMs / (1000 * 60));
+  const hours = Math.round(absMs / (1000 * 60 * 60));
+  const days = Math.round(absMs / (1000 * 60 * 60 * 24));
+
+  const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+
+  if (minutes < 60) return rtf.format(diffMs < 0 ? -minutes : minutes, "minute");
+  if (hours < 24) return rtf.format(diffMs < 0 ? -hours : hours, "hour");
+  return rtf.format(diffMs < 0 ? -days : days, "day");
+};
+
 export const formatMonth = (date) => {
   if (!date) return "";
   return new Date(date).toLocaleDateString("en-IN", {

@@ -2,6 +2,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { authService } from "../services/auth.service";
 import { IS_API_CONFIGURED } from "../constants";
+import { clearStoredToken } from "../utils/auth";
 
 const AuthContext = createContext(null);
 
@@ -14,6 +15,7 @@ export const AuthProvider = ({ children }) => {
       const { data } = await authService.getProfile();
       setUser(data.user || data);
     } catch {
+      clearStoredToken();
       setUser(null);
     } finally {
       setLoading(false);
@@ -39,6 +41,7 @@ export const AuthProvider = ({ children }) => {
     } catch {
       // Ignore logout failures and clear local auth state anyway.
     }
+    clearStoredToken();
     setUser(null);
   };
 
