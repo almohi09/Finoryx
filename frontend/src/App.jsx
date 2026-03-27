@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -19,7 +19,7 @@ import Account from "./pages/Account/Account";
 const App = () => {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <HashRouter>
         <Toaster
           position="top-right"
           toastOptions={{
@@ -69,7 +69,7 @@ const App = () => {
           {/* 404 fallback */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
-      </BrowserRouter>
+      </HashRouter>
     </AuthProvider>
   );
 };
