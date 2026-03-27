@@ -397,7 +397,7 @@ const Finance = () => {
             </div>
           </div>
 
-          <div className="space-y-2 max-h-[34rem] overflow-y-auto pr-1">
+          <div className="grid gap-3 max-h-[36rem] overflow-y-auto pr-1">
             {displayed.length === 0 ? (
               <div className="text-center py-12 muted-text text-sm">No transactions yet</div>
             ) : displayed.map((tx) => {
@@ -406,44 +406,65 @@ const Finance = () => {
                 : getCategoryInfo(tx.category);
               const detailLabel = tx.type === "income" ? categoryInfo.label : tx.description;
               const metaLabel = tx.type === "income" ? "Income" : categoryInfo.label;
+              const txDate = formatDate(tx.date || tx.createdAt);
+              const badgeClass = tx.type === "income" ? "badge-green" : "badge-red";
+              const iconClass = tx.type === "income"
+                ? "bg-emerald-500/12 text-emerald-300"
+                : "bg-rose-500/12 text-rose-300";
+              const amountClass = tx.type === "income" ? "text-emerald-300" : "text-rose-300";
 
               return (
                 <div
                   key={tx._id}
-                  className="flex items-center gap-3 p-3.5 rounded-2xl group transition-all border hover:-translate-y-[1px]"
-                  style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0))", borderColor: "var(--border)" }}
+                  className="group rounded-[1.35rem] border overflow-hidden transition-all hover:-translate-y-[1px]"
+                  style={{
+                    background:
+                      tx.type === "income"
+                        ? "linear-gradient(135deg, rgba(34,197,94,0.08), rgba(255,255,255,0.02) 35%, rgba(255,255,255,0.01))"
+                        : "linear-gradient(135deg, rgba(244,63,94,0.08), rgba(255,255,255,0.02) 35%, rgba(255,255,255,0.01))",
+                    borderColor: "var(--border)",
+                  }}
                 >
-                  <div
-                    className={`w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 ${tx.type === "income" ? "bg-emerald-500/12 text-emerald-300" : "bg-rose-500/12 text-rose-300"}`}
-                  >
-                    <span className="text-lg">{categoryInfo.icon}</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-display font-500 truncate">{detailLabel}</p>
-                    <div className="flex flex-wrap items-center gap-2 mt-1">
-                      <span className={tx.type === "income" ? "badge-green" : "badge-red"}>
-                        {tx.type === "income" ? "Income" : "Expense"}
-                      </span>
-                      <span className="text-xs muted-text">{metaLabel}</span>
-                      <span className="text-xs muted-text">{formatDate(tx.date || tx.createdAt)}</span>
+                  <div className="px-4 py-2.5 border-b flex items-center justify-between gap-3" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+                    <div className="flex items-center gap-2">
+                      <span className={badgeClass}>{tx.type === "income" ? "Income" : "Expense"}</span>
+                      <span className="text-xs muted-text">{txDate}</span>
                     </div>
-                    {tx.notes ? <p className="text-xs muted-text truncate mt-1">{tx.notes}</p> : null}
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={() => openEdit(tx, tx.type)} className="p-1.5 rounded-lg hover:bg-white/5 muted-text hover:text-white transition-colors">
+                        <Pencil size={13} />
+                      </button>
+                      <button onClick={() => handleDelete(tx._id, tx.type)} className="p-1.5 rounded-lg hover:bg-red-500/10 text-red-400 transition-colors">
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex flex-col items-end gap-1 shrink-0">
-                    <span className={`text-sm font-display font-700 ${tx.type === "income" ? "text-green-400" : "text-red-400"}`}>
-                      {tx.type === "income" ? "+" : "-"}{formatCurrency(tx.amount)}
-                    </span>
-                    <span className="text-[11px] muted-text">
-                      {tx.type === "income" ? "Added to cash flow" : "Reduced cash flow"}
-                    </span>
-                  </div>
-                  <div className="hidden group-hover:flex gap-1">
-                    <button onClick={() => openEdit(tx, tx.type)} className="p-1.5 rounded-lg hover:bg-white/5 muted-text hover:text-white transition-colors">
-                      <Pencil size={13} />
-                    </button>
-                    <button onClick={() => handleDelete(tx._id, tx.type)} className="p-1.5 rounded-lg hover:bg-red-500/10 text-red-400 transition-colors">
-                      <Trash2 size={13} />
-                    </button>
+
+                  <div className="p-4">
+                    <div className="flex items-start gap-4">
+                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${iconClass}`}>
+                        <span className="text-lg">{categoryInfo.icon}</span>
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="text-base font-display font-700 truncate">{detailLabel}</p>
+                            <p className="text-xs uppercase tracking-[0.16em] muted-text mt-1">{metaLabel}</p>
+                            {tx.notes ? <p className="text-sm muted-text mt-3 leading-6">{tx.notes}</p> : null}
+                          </div>
+
+                          <div className="md:text-right shrink-0">
+                            <div className={`text-xl font-display font-800 ${amountClass}`}>
+                              {tx.type === "income" ? "+" : "-"}{formatCurrency(tx.amount)}
+                            </div>
+                            <p className="text-xs muted-text mt-1">
+                              {tx.type === "income" ? "Added to cash flow" : "Reduced cash flow"}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               );

@@ -148,8 +148,8 @@ const Habits = () => {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 animate-fade-up animate-delay-200">
-        <Card>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 animate-fade-up animate-delay-200 items-start">
+        <Card className="self-start">
           <h3 className="section-title mb-1">This Week</h3>
           <p className="text-xs muted-text mb-4">Daily completions</p>
           <HabitStreakChart data={weeklyChart} />
