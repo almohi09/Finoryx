@@ -14,6 +14,7 @@ import Habits from "./pages/Habits/Habits";
 import Goals from "./pages/Goals/Goals";
 import Analytics from "./pages/Analytics/Analytics";
 import Admin from "./pages/Admin/Admin";
+import Account from "./pages/Account/Account";
 
 const App = () => {
   return (
@@ -54,6 +55,7 @@ const App = () => {
               <Route path="/habits" element={<Habits />} />
               <Route path="/goals" element={<Goals />} />
               <Route path="/analytics" element={<Analytics />} />
+              <Route path="/account" element={<Account />} />
             </Route>
           </Route>
 

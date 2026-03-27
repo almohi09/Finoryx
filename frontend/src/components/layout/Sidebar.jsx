@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import {
   LayoutDashboard, TrendingUp, Repeat2, Target,
-  BarChart3, ShieldCheck, LogOut, Wallet, ChevronRight, Coins,
+  BarChart3, ShieldCheck, LogOut, Wallet, ChevronRight, Settings,
 } from "lucide-react";
 
 const navItems = [
@@ -12,6 +12,7 @@ const navItems = [
   { to: "/habits", icon: Repeat2, label: "Habits" },
   { to: "/goals", icon: Target, label: "Goals" },
   { to: "/analytics", icon: BarChart3, label: "Analytics" },
+  { to: "/account", icon: Settings, label: "Account" },
 ];
 
 const Sidebar = ({ open, onClose }) => {
