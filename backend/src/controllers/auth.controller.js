@@ -11,11 +11,13 @@ const buildUserResponse = (user) => ({
   role: user.role,
 });
 
+const isProduction = process.env.NODE_ENV === "production";
+
 const setAuthCookie = (res, token) => {
   res.cookie("token", token, {
     httpOnly: true,
-    secure: false,
-    sameSite: "lax",
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
     maxAge: 7 * 24 * 60 * 60 * 1000,
     path: "/",
   });
@@ -88,8 +90,8 @@ const logoutUser = async (req, res) => {
   try {
     res.clearCookie("token", {
       httpOnly: true,
-      secure: false,
-      sameSite: "lax",
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
       path: "/",
     });
     return res.status(200).json({ message: "User logged out successfully" });
