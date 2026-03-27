@@ -380,21 +380,15 @@ const Finance = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
-            <div className="rounded-2xl border p-3.5" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
-              <p className="text-xs uppercase tracking-[0.16em] muted-text font-display font-600">Income records</p>
-              <div className="text-lg font-display font-800 text-emerald-300 mt-2">{incomes.length}</div>
-              <p className="text-xs muted-text mt-1">Tracked inflows</p>
-            </div>
-            <div className="rounded-2xl border p-3.5" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
-              <p className="text-xs uppercase tracking-[0.16em] muted-text font-display font-600">Expense records</p>
-              <div className="text-lg font-display font-800 text-rose-300 mt-2">{expenses.length}</div>
-              <p className="text-xs muted-text mt-1">Tracked outflows</p>
-            </div>
-            <div className="rounded-2xl border p-3.5" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
-              <p className="text-xs uppercase tracking-[0.16em] muted-text font-display font-600">Filter view</p>
-              <div className="text-lg font-display font-800 text-amber-300 mt-2">{activeTab}</div>
-              <p className="text-xs muted-text mt-1">Current ledger slice</p>
-            </div>
+            {[["Income records", incomes.length, "Tracked inflows", "text-emerald-300"],
+              ["Expense records", expenses.length, "Tracked outflows", "text-rose-300"],
+              ["Filter view", activeTab, "Current ledger slice", "text-amber-300"]].map(([label, value, sub, tone]) => (
+              <div key={label} className="rounded-2xl border p-3.5" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
+                <p className="text-xs uppercase tracking-[0.16em] muted-text font-display font-600">{label}</p>
+                <div className={`text-lg font-display font-800 ${tone} mt-2`}>{value}</div>
+                <p className="text-xs muted-text mt-1">{sub}</p>
+              </div>
+            ))}
           </div>
 
           <div className="grid gap-3 max-h-[36rem] overflow-y-auto pr-1">
