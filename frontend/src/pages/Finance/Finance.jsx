@@ -75,19 +75,22 @@ const Finance = () => {
   };
 
   const handleSave = async () => {
-    if (!form.description || !form.amount) return toast.error("Fill required fields");
+    if (modalType === "expense" && !form.description.trim()) return toast.error("Description is required");
+    if (modalType === "income" && !form.source) return toast.error("Income source is required");
+    if (!form.amount) return toast.error("Amount is required");
     setSaving(true);
     try {
       if (modalType === "expense") {
         if (editItem) await financeService.updateExpense(editItem._id, form);
         else await financeService.addExpense(form);
       } else {
+        const incomeSourceLabel = INCOME_SOURCES.find((item) => item.value === form.source)?.label || "Other";
         const incomePayload = {
           amount: form.amount,
           date: form.date,
           notes: form.notes,
           source: form.source,
-          description: form.description,
+          description: incomeSourceLabel,
         };
         if (editItem) await financeService.updateIncome(editItem._id, incomePayload);
         else await financeService.addIncome(incomePayload);
@@ -199,8 +202,10 @@ const Finance = () => {
                 return (
                   <div key={tx._id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/3 group transition-colors">
                     <span className="text-xl">{categoryInfo.icon}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-display font-500 truncate">{tx.description}</p>
+                  <div className="flex-1 min-w-0">
+                      <p className="text-sm font-display font-500 truncate">
+                        {tx.type === "income" ? categoryInfo.label : tx.description}
+                      </p>
                       <p className="text-xs muted-text">{categoryInfo.label} | {formatDate(tx.date || tx.createdAt)}</p>
                       {tx.notes ? <p className="text-xs muted-text truncate mt-1">{tx.notes}</p> : null}
                     </div>
@@ -225,12 +230,14 @@ const Finance = () => {
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={`${editItem ? "Edit" : "Add"} ${modalType === "income" ? "Income" : "Expense"}`}>
         <div className="space-y-4">
-          <Input
-            label={modalType === "income" ? "Income Source" : "Description"}
-            placeholder={modalType === "income" ? "e.g. Salary, Freelance, Gift" : "e.g. Grocery, Rent"}
-            value={form.description}
-            onChange={(e) => setForm({ ...form, description: e.target.value })}
-          />
+          {modalType === "expense" ? (
+            <Input
+              label="Description"
+              placeholder="e.g. Grocery, Rent"
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+            />
+          ) : null}
           <div className="grid grid-cols-2 gap-4">
             <Input label="Amount (INR)" type="number" placeholder="0.00" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
             <Input label="Date" type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
