@@ -1,0 +1,202 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-primary: #0e0d09;
+  --bg-secondary: #1a1812;
+  --bg-card: #1e1c16;
+  --bg-elevated: #252319;
+  --border: #2e2c24;
+  --border-light: #3a3830;
+  --text-primary: #f0f0ee;
+  --text-secondary: #8e8b80;
+  --text-muted: #6e6b5e;
+  --accent-gold: #f59e0b;
+  --accent-gold-dim: #92400e;
+  --accent-green: #22c55e;
+  --accent-red: #f43f5e;
+  --accent-blue: #60a5fa;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: "DM Sans", sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Syne", sans-serif;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-light);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Custom utility classes */
+@layer components {
+  .card {
+    @apply rounded-2xl border p-5;
+    background: var(--bg-card);
+    border-color: var(--border);
+  }
+
+  .card-elevated {
+    @apply rounded-2xl border p-5;
+    background: var(--bg-elevated);
+    border-color: var(--border-light);
+  }
+
+  .btn-primary {
+    @apply font-display font-semibold rounded-xl px-5 py-2.5 text-sm transition-all duration-200;
+    background: var(--accent-gold);
+    color: var(--bg-primary);
+  }
+  .btn-primary:hover {
+    background: #fbbf24;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(245, 158, 11, 0.3);
+  }
+
+  .btn-ghost {
+    @apply font-display font-medium rounded-xl px-5 py-2.5 text-sm transition-all duration-200 border;
+    border-color: var(--border-light);
+    color: var(--text-secondary);
+    background: transparent;
+  }
+  .btn-ghost:hover {
+    border-color: var(--accent-gold);
+    color: var(--accent-gold);
+  }
+
+  .input-field {
+    @apply w-full rounded-xl px-4 py-3 text-sm outline-none transition-all duration-200;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+  }
+  .input-field::placeholder {
+    color: var(--text-muted);
+  }
+  .input-field:focus {
+    border-color: var(--accent-gold);
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+  }
+
+  .label {
+    @apply block text-xs font-medium mb-1.5;
+    color: var(--text-secondary);
+    font-family: "Syne", sans-serif;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .stat-value {
+    @apply text-2xl font-extrabold;
+    font-family: "Syne", sans-serif;
+    color: var(--text-primary);
+  }
+
+  .stat-label {
+    @apply text-xs;
+    color: var(--text-muted);
+  }
+
+  .badge-green,
+  .badge-red,
+  .badge-gold {
+    @apply text-xs px-2.5 py-1 rounded-full font-medium;
+  }
+
+  .badge-green {
+    background: rgba(34, 197, 94, 0.12);
+    color: #4ade80;
+  }
+
+  .badge-red {
+    background: rgba(244, 63, 94, 0.12);
+    color: #fb7185;
+  }
+
+  .badge-gold {
+    background: rgba(245, 158, 11, 0.12);
+    color: #fbbf24;
+  }
+
+  .section-title {
+    @apply text-xl font-bold;
+    font-family: "Syne", sans-serif;
+  }
+
+  .page-title {
+    @apply text-3xl font-extrabold;
+    font-family: "Syne", sans-serif;
+  }
+
+  .divider {
+    @apply my-4 border-0 h-px;
+    background: var(--border);
+  }
+
+  .gold-text { color: var(--accent-gold); }
+  .green-text { color: var(--accent-green); }
+  .red-text { color: var(--accent-red); }
+  .muted-text { color: var(--text-secondary); }
+
+  .progress-bar-bg {
+    @apply rounded-full h-2 w-full overflow-hidden;
+    background: var(--border);
+  }
+
+  .progress-bar-fill {
+    @apply h-full rounded-full transition-all duration-700;
+    background: linear-gradient(90deg, var(--accent-gold), #fbbf24);
+  }
+}
+
+/* Animations */
+.animate-delay-100 { animation-delay: 0.1s; }
+.animate-delay-200 { animation-delay: 0.2s; }
+.animate-delay-300 { animation-delay: 0.3s; }
+.animate-delay-400 { animation-delay: 0.4s; }
+.animate-delay-500 { animation-delay: 0.5s; }
+
+.animate-fade-up {
+  opacity: 0;
+  animation: fadeUp 0.5s ease forwards;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
