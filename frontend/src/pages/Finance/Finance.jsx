@@ -199,18 +199,18 @@ const Finance = () => {
                 const categoryInfo = tx.type === "income"
                   ? getIncomeSourceInfo(tx.source)
                   : getCategoryInfo(tx.category);
+                const detailLabel = tx.type === "income" ? categoryInfo.label : tx.description;
                 return (
                   <div key={tx._id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/3 group transition-colors">
                     <span className="text-xl">{categoryInfo.icon}</span>
-                  <div className="flex-1 min-w-0">
-                      <p className="text-sm font-display font-500 truncate">
-                        {tx.type === "income" ? categoryInfo.label : tx.description}
-                      </p>
-                      <p className="text-xs muted-text">
-                        {tx.type === "income"
-                          ? formatDate(tx.date || tx.createdAt)
-                          : `${categoryInfo.label} | ${formatDate(tx.date || tx.createdAt)}`}
-                      </p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <p className="text-sm font-display font-500 truncate">{detailLabel}</p>
+                        <span className={tx.type === "income" ? "badge-green shrink-0" : "badge-red shrink-0"}>
+                          {tx.type === "income" ? "Income" : "Expense"}
+                        </span>
+                      </div>
+                      <p className="text-xs muted-text">{formatDate(tx.date || tx.createdAt)}</p>
                       {tx.notes ? <p className="text-xs muted-text truncate mt-1">{tx.notes}</p> : null}
                     </div>
                     <span className={`text-sm font-display font-700 ${tx.type === "income" ? "text-green-400" : "text-red-400"}`}>
