@@ -1,7 +1,12 @@
 const configuredApiUrl = import.meta.env.VITE_API_URL?.trim();
 const defaultApiUrl = import.meta.env.DEV ? "http://localhost:3000/api" : "/api";
 
-export const API_BASE_URL = (configuredApiUrl || defaultApiUrl).replace(/\/+$/, "");
+const normalizeApiBaseUrl = (url) =>
+  url
+    .replace(/\/+(auth|finance|investments|dashboard|habits|goals|admin|feedback)(\/.*)?$/i, "")
+    .replace(/\/+$/, "");
+
+export const API_BASE_URL = normalizeApiBaseUrl(configuredApiUrl || defaultApiUrl);
 
 export const EXPENSE_CATEGORIES = [
   { value: "food", label: "Food & Dining", icon: "Food", color: "#f59e0b" },
