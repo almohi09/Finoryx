@@ -206,7 +206,11 @@ const Finance = () => {
                       <p className="text-sm font-display font-500 truncate">
                         {tx.type === "income" ? categoryInfo.label : tx.description}
                       </p>
-                      <p className="text-xs muted-text">{categoryInfo.label} | {formatDate(tx.date || tx.createdAt)}</p>
+                      <p className="text-xs muted-text">
+                        {tx.type === "income"
+                          ? formatDate(tx.date || tx.createdAt)
+                          : `${categoryInfo.label} | ${formatDate(tx.date || tx.createdAt)}`}
+                      </p>
                       {tx.notes ? <p className="text-xs muted-text truncate mt-1">{tx.notes}</p> : null}
                     </div>
                     <span className={`text-sm font-display font-700 ${tx.type === "income" ? "text-green-400" : "text-red-400"}`}>
