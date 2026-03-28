@@ -41,4 +41,14 @@ app.use('/api/admin',adminRouter);
 app.use("/api/feedback", feedbackRouter);
 app.use(errorMiddleware)
 
+const path = require('path');
+
+// Serve static files from the frontend build directory
+app.use(express.static(path.join(__dirname, '../../frontend/dist')));
+
+// Catch-all route to serve the frontend's index.html for client-side routing
+app.get('*', (req, res) => {
+  res.sendFile(path.resolve(__dirname, '../../frontend/dist', 'index.html'));
+});
+
 module.exports = app;
