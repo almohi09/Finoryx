@@ -20,6 +20,9 @@ const EMPTY_WEALTH = Array.from({ length: 6 }, (_, index) => {
   };
 });
 
+const ANIMATION_DELAY_CLASSES = ["animate-delay-100", "animate-delay-200", "animate-delay-300", "animate-delay-400"];
+const DASHBOARD_GOAL_COUNT = 3;
+
 const Dashboard = () => {
   const [summary, setSummary] = useState({
     netWorth: 0,
@@ -72,7 +75,7 @@ const Dashboard = () => {
     fetchAll();
   }, []);
 
-  const topGoal = goals[0] || null;
+  const visibleGoals = goals.slice(0, DASHBOARD_GOAL_COUNT);
   const totalGoalTarget = goals.reduce((sum, goal) => sum + (goal.targetAmount || 0), 0);
   const totalGoalSaved = goals.reduce((sum, goal) => sum + (goal.currentAmount || 0), 0);
   const totalGoalProgress = totalGoalTarget > 0 ? Math.min(Math.round((totalGoalSaved / totalGoalTarget) * 100), 100) : 0;
@@ -130,7 +133,7 @@ const Dashboard = () => {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat, i) => (
-          <Card key={stat.label} className={`animate-fade-up animate-delay-${(i + 1) * 100}`}>
+          <Card key={stat.label} className={`animate-fade-up ${ANIMATION_DELAY_CLASSES[i] || ""}`}>
             <div className="flex items-start justify-between mb-3">
               <span className="muted-text text-xs">{stat.label}</span>
               <span className={`p-2 rounded-xl ${colorMap[stat.color]}`}>
@@ -222,18 +225,20 @@ const Dashboard = () => {
           ) : (
             <>
               <div className="space-y-3">
-                <div className="p-3 rounded-xl" style={{ background: "var(--bg-secondary)" }}>
-                  <div className="flex items-center justify-between gap-3 mb-2">
-                    <div className="min-w-0">
-                      <p className="text-sm font-display font-600 truncate">{topGoal?.name}</p>
-                      <p className="text-xs muted-text">
-                        {formatCurrency(topGoal?.currentAmount)} of {formatCurrency(topGoal?.targetAmount)}
-                      </p>
+                {visibleGoals.map((goal) => (
+                  <div key={goal._id} className="p-3 rounded-xl" style={{ background: "var(--bg-secondary)" }}>
+                    <div className="flex items-center justify-between gap-3 mb-2">
+                      <div className="min-w-0">
+                        <p className="text-sm font-display font-600 truncate">{goal.name}</p>
+                        <p className="text-xs muted-text">
+                          {formatCurrency(goal.currentAmount)} of {formatCurrency(goal.targetAmount)}
+                        </p>
+                      </div>
+                      <span className="badge-gold">{goal.progress || 0}%</span>
                     </div>
-                    <span className="badge-gold">{topGoal?.progress || 0}%</span>
+                    <ProgressBar value={goal.currentAmount || 0} max={goal.targetAmount || 100} showLabel={false} />
                   </div>
-                  <ProgressBar value={topGoal?.currentAmount || 0} max={topGoal?.targetAmount || 100} showLabel={false} />
-                </div>
+                ))}
                 <div className="flex items-center justify-between text-xs muted-text">
                   <span>{goals.length} active goal{goals.length > 1 ? "s" : ""}</span>
                   <span>{formatCurrency(totalGoalSaved)} saved</span>

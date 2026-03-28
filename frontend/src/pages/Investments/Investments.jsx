@@ -113,7 +113,7 @@ const Investments = () => {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 animate-fade-up animate-delay-200">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 animate-fade-up animate-delay-200 items-start">
         <Card>
           <h3 className="section-title mb-4">Portfolio Mix</h3>
           {byType.length > 0 ? (

@@ -434,12 +434,9 @@ const Finance = () => {
                     </div>
                   </div>
 
-                  <div className="p-4">
-                    <div className="flex flex-col gap-4">
+                  <div className="p-5">
+                    <div className="flex flex-col gap-5">
                       <div className="flex items-start gap-4">
-                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${iconClass}`}>
-                          <span className="text-lg">{categoryInfo.icon}</span>
-                        </div>
 
                         <div className="flex-1 min-w-0">
                           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">

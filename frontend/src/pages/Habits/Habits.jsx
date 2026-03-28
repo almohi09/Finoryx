@@ -205,23 +205,19 @@ const Habits = () => {
                           disabled={habit.completedToday || completing === habit._id}
                           className="flex-shrink-0 transition-transform hover:scale-110 disabled:cursor-default"
                         >
-                          {habit.completedToday ? <CheckCircle2 size={24} className="text-amber-400" /> : <Circle size={24} className="muted-text hover:text-amber-400 transition-colors" />}
-                        </button>
-
-                        <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 bg-white/5 text-2xl">
-                          {info.icon}
+                          <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 bg-amber-400/10">
+                          
+                          {habit.completedToday ? <CheckCircle2 size={25} className="text-amber-400" /> : <Circle size={25} className="muted-text hover:text-amber-400 transition-colors" />}
                         </div>
+                        </button>
+                        
+
 
                         <div className="flex-1 min-w-0">
                           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
                             <div className="min-w-0">
                               <p className={`text-base font-display font-700 leading-6 break-words ${habit.completedToday ? "line-through muted-text" : ""}`}>{habit.name}</p>
                               {habit.description ? <p className="text-sm muted-text mt-3 leading-6 break-words">{habit.description}</p> : null}
-                            </div>
-
-                            <div className="md:text-right shrink-0">
-                              <div className="text-xl font-display font-800">{habit.streak || 0}</div>
-                              <div className="text-xs muted-text">streak days</div>
                             </div>
                           </div>
                         </div>
