@@ -140,6 +140,90 @@ const validateGoalContribution = (req, res, next) => {
   next();
 };
 
+const validateBankAccount = (req, res, next) => {
+  const institutionName = (req.body.institutionName || "").trim();
+  const accountName = (req.body.accountName || "").trim();
+  const accountType = (req.body.accountType || "checking").trim();
+  const balance = Number(req.body.balance ?? 0);
+  const supportedTypes = ["checking", "savings", "credit", "brokerage", "wallet", "other"];
+
+  if (!institutionName) {
+    return res.status(400).json({ message: "Institution name is required" });
+  }
+
+  if (!accountName) {
+    return res.status(400).json({ message: "Account name is required" });
+  }
+
+  if (!supportedTypes.includes(accountType)) {
+    return res.status(400).json({ message: "Invalid account type" });
+  }
+
+  if (Number.isNaN(balance)) {
+    return res.status(400).json({ message: "Invalid balance" });
+  }
+
+  req.body.institutionName = institutionName;
+  req.body.accountName = accountName;
+  req.body.accountType = accountType;
+  req.body.balance = balance;
+  req.body.mask = String(req.body.mask || "").trim().slice(-4);
+  next();
+};
+
+const validateTradeOrder = (req, res, next) => {
+  const symbol = String(req.body.symbol || "").trim().toUpperCase();
+  const assetName = String(req.body.assetName || "").trim();
+  const side = String(req.body.side || "buy").trim().toLowerCase();
+  const assetType = String(req.body.assetType || "stock").trim().toLowerCase();
+  const quantity = Number(req.body.quantity);
+  const price = Number(req.body.price);
+  const fees = Number(req.body.fees ?? 0);
+  const validSides = ["buy", "sell"];
+  const validAssetTypes = ["stock", "etf", "crypto", "mutual_fund", "bond", "other"];
+
+  if (!symbol) {
+    return res.status(400).json({ message: "Symbol is required" });
+  }
+
+  if (!assetName) {
+    return res.status(400).json({ message: "Asset name is required" });
+  }
+
+  if (!validSides.includes(side)) {
+    return res.status(400).json({ message: "Invalid trade side" });
+  }
+
+  if (!validAssetTypes.includes(assetType)) {
+    return res.status(400).json({ message: "Invalid asset type" });
+  }
+
+  if (Number.isNaN(quantity) || quantity <= 0) {
+    return res.status(400).json({ message: "Quantity must be a positive number" });
+  }
+
+  if (Number.isNaN(price) || price <= 0) {
+    return res.status(400).json({ message: "Price must be a positive number" });
+  }
+
+  if (Number.isNaN(fees) || fees < 0) {
+    return res.status(400).json({ message: "Fees cannot be negative" });
+  }
+
+  if (req.body.executedAt && Number.isNaN(Date.parse(req.body.executedAt))) {
+    return res.status(400).json({ message: "Invalid trade date" });
+  }
+
+  req.body.symbol = symbol;
+  req.body.assetName = assetName;
+  req.body.side = side;
+  req.body.assetType = assetType;
+  req.body.quantity = quantity;
+  req.body.price = price;
+  req.body.fees = fees;
+  next();
+};
+
 module.exports = {
   validateIncome,
   validateExpense,
@@ -147,4 +231,6 @@ module.exports = {
   validateHabit,
   validateGoal,
   validateGoalContribution,
+  validateBankAccount,
+  validateTradeOrder,
 };

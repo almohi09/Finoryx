@@ -76,6 +76,29 @@ export const INVESTMENT_TYPES = [
   { value: "other", label: "Other" },
 ];
 
+export const BANK_ACCOUNT_TYPES = [
+  { value: "checking", label: "Checking" },
+  { value: "savings", label: "Savings" },
+  { value: "credit", label: "Credit Card" },
+  { value: "brokerage", label: "Brokerage" },
+  { value: "wallet", label: "Wallet" },
+  { value: "other", label: "Other" },
+];
+
+export const TRADE_ASSET_TYPES = [
+  { value: "stock", label: "Stock" },
+  { value: "etf", label: "ETF" },
+  { value: "crypto", label: "Crypto" },
+  { value: "mutual_fund", label: "Mutual Fund" },
+  { value: "bond", label: "Bond" },
+  { value: "other", label: "Other" },
+];
+
+export const TRADE_SIDES = [
+  { value: "buy", label: "Buy" },
+  { value: "sell", label: "Sell" },
+];
+
 export const GOAL_CATEGORIES = [
   { value: "emergency_fund", label: "Emergency Fund", icon: "Emergency" },
   { value: "vacation", label: "Vacation", icon: "Vacation" },

@@ -16,4 +16,13 @@ export const financeService = {
   // Summary
   getMonthlySummary: (params) => api.get("/finance/summary", { params }),
   getCategoryBreakdown: (params) => api.get("/finance/category-breakdown", { params }),
+
+  // Bank integrations
+  getBankAccounts: () => api.get("/finance/bank-accounts"),
+  addBankAccount: (data) => api.post("/finance/bank-accounts", data),
+  syncBankAccount: (id) => api.post(`/finance/bank-accounts/${id}/sync`),
+  getBankTransactions: () => api.get("/finance/bank-transactions"),
+
+  // Advisor
+  getAdvisorInsights: () => api.get("/finance/advisor"),
 };

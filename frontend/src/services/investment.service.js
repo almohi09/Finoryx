@@ -6,4 +6,7 @@ export const investmentService = {
   updateInvestment: (id, data) => api.put(`/investments/${id}`, data),
   deleteInvestment: (id) => api.delete(`/investments/${id}`),
   getInvestmentSummary: () => api.get("/investments/summary"),
+  getTrades: () => api.get("/investments/trades"),
+  addTrade: (data) => api.post("/investments/trades", data),
+  getTradeSummary: () => api.get("/investments/trades/summary"),
 };

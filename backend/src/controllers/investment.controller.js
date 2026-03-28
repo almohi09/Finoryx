@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const Investment = require("../models/investment.model");
+const TradeOrder = require("../models/tradeOrder.model");
 
 const toInvestmentResponse = (investment) => ({
   ...investment.toObject(),
@@ -84,4 +85,73 @@ const deleteInvestment = async (req, res, next) => {
   }
 };
 
-module.exports = { addInvestment, getInvestments, updateInvestment, deleteInvestment };
+const toTradeOrderResponse = (order) => ({
+  ...order.toObject(),
+  grossValue: order.quantity * order.price,
+  totalValue: order.quantity * order.price + (order.side === "buy" ? order.fees : -order.fees),
+});
+
+const getTradeOrders = async (req, res, next) => {
+  try {
+    const orders = await TradeOrder.find({ userId: req.user._id }).sort({ executedAt: -1, createdAt: -1 });
+    res.json({ orders: orders.map(toTradeOrderResponse) });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const addTradeOrder = async (req, res, next) => {
+  try {
+    const order = await TradeOrder.create({
+      userId: req.user._id,
+      symbol: req.body.symbol,
+      assetName: req.body.assetName,
+      assetType: req.body.assetType,
+      side: req.body.side,
+      quantity: req.body.quantity,
+      price: req.body.price,
+      fees: req.body.fees,
+      platform: req.body.platform || "Paper Trading",
+      executedAt: req.body.executedAt || new Date(),
+      notes: req.body.notes || "",
+    });
+
+    res.status(201).json(toTradeOrderResponse(order));
+  } catch (err) {
+    next(err);
+  }
+};
+
+const getTradeSummary = async (req, res, next) => {
+  try {
+    const userId = new mongoose.Types.ObjectId(req.user._id);
+    const [buyTotals, sellTotals] = await Promise.all([
+      TradeOrder.aggregate([
+        { $match: { userId, side: "buy" } },
+        { $group: { _id: null, total: { $sum: { $add: [{ $multiply: ["$quantity", "$price"] }, "$fees"] } } } },
+      ]),
+      TradeOrder.aggregate([
+        { $match: { userId, side: "sell" } },
+        { $group: { _id: null, total: { $sum: { $subtract: [{ $multiply: ["$quantity", "$price"] }, "$fees"] } } } },
+      ]),
+    ]);
+
+    res.json({
+      totalBuys: buyTotals[0]?.total || 0,
+      totalSells: sellTotals[0]?.total || 0,
+      netTradeFlow: (sellTotals[0]?.total || 0) - (buyTotals[0]?.total || 0),
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = {
+  addInvestment,
+  getInvestments,
+  updateInvestment,
+  deleteInvestment,
+  getTradeOrders,
+  addTradeOrder,
+  getTradeSummary,
+};

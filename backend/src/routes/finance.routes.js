@@ -1,6 +1,6 @@
 const express = require("express");
 const { authUser } = require("../middlewares/auth.middleware");
-const { validateIncome, validateExpense } = require("../middlewares/validate.middleware");
+const { validateIncome, validateExpense, validateBankAccount } = require("../middlewares/validate.middleware");
 const {
   addIncome,
   getIncomes,
@@ -11,6 +11,11 @@ const {
   deleteTransaction,
   getSummary,
   getCategoryBreakdown,
+  getBankAccounts,
+  addBankAccount,
+  syncBankAccount,
+  getBankTransactions,
+  getAdvisorInsights,
 } = require("../controllers/finance.controller");
 
 const financeRouter = express.Router();
@@ -43,5 +48,10 @@ financeRouter.delete(
 
 financeRouter.get("/summary", authUser, getSummary);
 financeRouter.get("/category-breakdown", authUser, getCategoryBreakdown);
+financeRouter.get("/bank-accounts", authUser, getBankAccounts);
+financeRouter.post("/bank-accounts", authUser, validateBankAccount, addBankAccount);
+financeRouter.post("/bank-accounts/:id/sync", authUser, syncBankAccount);
+financeRouter.get("/bank-transactions", authUser, getBankTransactions);
+financeRouter.get("/advisor", authUser, getAdvisorInsights);
 
 module.exports = financeRouter;
