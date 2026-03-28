@@ -20,35 +20,23 @@ const allowedOrigins = (process.env.CLIENT_URLS || process.env.CLIENT_URL || "ht
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
-    origin:(origin, callback) => {
+    origin: (origin, callback) => {
         if (!origin || allowedOrigins.includes(origin)) {
             return callback(null, true);
         }
-
         return callback(new Error(`CORS blocked for origin: ${origin}`));
     },
-    credentials:true
+    credentials: true
 }));
 
-
-app.use('/api/auth',authRouter);
-app.use("/api/finance",financeRouter);
-app.use("/api/investments",investmentRouter);
-app.use('/api/dashboard',dashboardRouter);
-app.use('/api/habits',habitRouter);
-app.use('/api/goals',goalRouter);
-app.use('/api/admin',adminRouter);
+app.use('/api/auth', authRouter);
+app.use("/api/finance", financeRouter);
+app.use("/api/investments", investmentRouter);
+app.use('/api/dashboard', dashboardRouter);
+app.use('/api/habits', habitRouter);
+app.use('/api/goals', goalRouter);
+app.use('/api/admin', adminRouter);
 app.use("/api/feedback", feedbackRouter);
-app.use(errorMiddleware)
-
-const path = require('path');
-
-// Serve static files from the frontend build directory
-app.use(express.static(path.join(__dirname, '../../frontend/dist')));
-
-// Catch-all route to serve the frontend's index.html for client-side routing
-app.get('/{*path}', (req, res) => {
-  res.sendFile(path.join(__dirname, '../../frontend/dist', 'index.html'));
-});
+app.use(errorMiddleware);
 
 module.exports = app;
