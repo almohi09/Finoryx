@@ -28,6 +28,8 @@ const defaultTradeForm = {
   assetName: "",
   assetType: "stock",
   side: "buy",
+  timeInForce: "day",
+  executeLive: false,
   quantity: "",
   price: "",
   fees: "",
@@ -348,7 +350,32 @@ const Investments = () => {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Select label="Asset Type" value={tradeForm.assetType} onChange={(e) => setTradeForm({ ...tradeForm, assetType: e.target.value })} options={TRADE_ASSET_TYPES} />
             <Select label="Side" value={tradeForm.side} onChange={(e) => setTradeForm({ ...tradeForm, side: e.target.value })} options={TRADE_SIDES} />
+            <Select
+              label="Time In Force"
+              value={tradeForm.timeInForce}
+              onChange={(e) => setTradeForm({ ...tradeForm, timeInForce: e.target.value })}
+              options={[
+                { value: "day", label: "DAY" },
+                { value: "gtc", label: "GTC" },
+                { value: "ioc", label: "IOC" },
+                { value: "fok", label: "FOK" },
+              ]}
+            />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input label="Trade Date" type="date" value={tradeForm.executedAt} onChange={(e) => setTradeForm({ ...tradeForm, executedAt: e.target.value })} />
+            <div className="rounded-xl border px-3 py-2.5 flex items-center justify-between" style={{ borderColor: "var(--border)" }}>
+              <div>
+                <p className="text-sm font-display font-700">Execute with broker</p>
+                <p className="text-xs muted-text mt-1">Sends order to Alpaca when enabled</p>
+              </div>
+              <input
+                type="checkbox"
+                checked={Boolean(tradeForm.executeLive)}
+                onChange={(e) => setTradeForm({ ...tradeForm, executeLive: e.target.checked })}
+                className="h-4 w-4"
+              />
+            </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Input label="Quantity" type="number" placeholder="0" value={tradeForm.quantity} onChange={(e) => setTradeForm({ ...tradeForm, quantity: e.target.value })} />

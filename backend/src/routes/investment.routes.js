@@ -9,6 +9,8 @@ const {
   getTradeOrders,
   addTradeOrder,
   getTradeSummary,
+  getBrokerAccount,
+  getBrokerPositions,
 } = require("../controllers/investment.controller");
 
 const investmentRouter = express.Router();
@@ -21,5 +23,7 @@ investmentRouter.delete("/:id", authUser, deleteInvestment);
 investmentRouter.get("/trades", authUser, getTradeOrders);
 investmentRouter.post("/trades", authUser, validateTradeOrder, addTradeOrder);
 investmentRouter.get("/trades/summary", authUser, getTradeSummary);
+investmentRouter.get("/broker/account", authUser, getBrokerAccount);
+investmentRouter.get("/broker/positions", authUser, getBrokerPositions);
 
 module.exports = investmentRouter;

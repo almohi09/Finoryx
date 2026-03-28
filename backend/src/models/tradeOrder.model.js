@@ -49,6 +49,46 @@ const tradeOrderSchema = new mongoose.Schema(
       default: "Paper Trading",
       trim: true,
     },
+    broker: {
+      type: String,
+      enum: ["manual", "alpaca"],
+      default: "manual",
+      trim: true,
+    },
+    brokerOrderId: {
+      type: String,
+      default: "",
+      trim: true,
+      index: true,
+    },
+    status: {
+      type: String,
+      default: "filled",
+      trim: true,
+    },
+    timeInForce: {
+      type: String,
+      default: "day",
+      trim: true,
+    },
+    liveExecution: {
+      type: Boolean,
+      default: false,
+    },
+    filledQty: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    filledAvgPrice: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    rawBrokerResponse: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null,
+    },
     executedAt: {
       type: Date,
       default: Date.now,

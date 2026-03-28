@@ -81,6 +81,28 @@ const Finance = () => {
   const [bankForm, setBankForm] = useState(defaultBankForm);
   const [saving, setSaving] = useState(false);
   const [syncingId, setSyncingId] = useState("");
+  const [linkingPlaid, setLinkingPlaid] = useState(false);
+
+  const loadPlaidScript = async () => {
+    if (window.Plaid?.create) return;
+
+    await new Promise((resolve, reject) => {
+      const existing = document.querySelector('script[data-plaid-link="true"]');
+      if (existing) {
+        existing.addEventListener("load", resolve, { once: true });
+        existing.addEventListener("error", reject, { once: true });
+        return;
+      }
+
+      const script = document.createElement("script");
+      script.src = "https://cdn.plaid.com/link/v2/stable/link-initialize.js";
+      script.async = true;
+      script.dataset.plaidLink = "true";
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error("Unable to load Plaid Link"));
+      document.body.appendChild(script);
+    });
+  };
 
   const fetchData = async () => {
     try {
@@ -196,6 +218,37 @@ const Finance = () => {
       toast.error(error.response?.data?.message || "Failed to sync account");
     } finally {
       setSyncingId("");
+    }
+  };
+
+  const handlePlaidConnect = async () => {
+    setLinkingPlaid(true);
+    try {
+      const { data } = await financeService.createBankLinkToken();
+      const linkToken = data?.linkToken;
+      if (!linkToken) {
+        throw new Error("Missing link token");
+      }
+
+      await loadPlaidScript();
+      const handler = window.Plaid.create({
+        token: linkToken,
+        onSuccess: async (publicToken) => {
+          try {
+            await financeService.exchangeBankPublicToken(publicToken);
+            toast.success("Bank accounts linked");
+            fetchData();
+          } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to finalize bank link");
+          }
+        },
+        onExit: () => {},
+      });
+      handler.open();
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.message || "Failed to initialize Plaid Link");
+    } finally {
+      setLinkingPlaid(false);
     }
   };
 
@@ -331,6 +384,9 @@ const Finance = () => {
           </Button>
           <Button variant="ghost" size="sm" className="min-w-[9rem]" onClick={() => openAdd("income")}>
             <Plus size={13} /> Add Income
+          </Button>
+          <Button variant="ghost" size="sm" className="min-w-[11rem]" loading={linkingPlaid} onClick={handlePlaidConnect}>
+            <Landmark size={13} /> Connect Plaid
           </Button>
           <Button size="sm" className="min-w-[10rem]" onClick={() => setShowBankModal(true)}>
             <Landmark size={13} /> Link Account
@@ -646,7 +702,7 @@ const Finance = () => {
           </div>
 
           <div className="rounded-2xl border p-4 text-sm muted-text" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
-            Linking an account enables synthetic sync data in this project build so you can demo automatic transaction tracking without third-party banking credentials.
+            Use Plaid Link in production to connect and authorize accounts securely, then run sync to pull recent posted and pending transactions.
           </div>
 
           <div className="flex gap-3 pt-2">

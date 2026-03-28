@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const Investment = require("../models/investment.model");
 const TradeOrder = require("../models/tradeOrder.model");
+const { getAccount, getPositions, submitOrder } = require("../services/alpaca.service");
 
 const toInvestmentResponse = (investment) => ({
   ...investment.toObject(),
@@ -102,6 +103,36 @@ const getTradeOrders = async (req, res, next) => {
 
 const addTradeOrder = async (req, res, next) => {
   try {
+    let broker = "manual";
+    let platform = req.body.platform || "Paper Trading";
+    let brokerOrderId = "";
+    let status = "filled";
+    let liveExecution = false;
+    let filledQty = req.body.quantity;
+    let filledAvgPrice = req.body.price;
+    let rawBrokerResponse = null;
+    const clientOrderId = `finoryx-${req.user._id}-${Date.now()}`;
+
+    if (req.body.executeLive) {
+      const brokerOrder = await submitOrder({
+        symbol: req.body.symbol,
+        side: req.body.side,
+        qty: req.body.quantity,
+        type: "market",
+        timeInForce: req.body.timeInForce,
+        clientOrderId,
+      });
+
+      broker = "alpaca";
+      platform = "Alpaca";
+      brokerOrderId = brokerOrder.id || "";
+      status = brokerOrder.status || "accepted";
+      liveExecution = true;
+      filledQty = Number(brokerOrder.filled_qty || req.body.quantity || 0);
+      filledAvgPrice = Number(brokerOrder.filled_avg_price || req.body.price || 0);
+      rawBrokerResponse = brokerOrder;
+    }
+
     const order = await TradeOrder.create({
       userId: req.user._id,
       symbol: req.body.symbol,
@@ -111,7 +142,15 @@ const addTradeOrder = async (req, res, next) => {
       quantity: req.body.quantity,
       price: req.body.price,
       fees: req.body.fees,
-      platform: req.body.platform || "Paper Trading",
+      platform,
+      broker,
+      brokerOrderId,
+      status,
+      timeInForce: req.body.timeInForce,
+      liveExecution,
+      filledQty,
+      filledAvgPrice,
+      rawBrokerResponse,
       executedAt: req.body.executedAt || new Date(),
       notes: req.body.notes || "",
     });
@@ -146,6 +185,46 @@ const getTradeSummary = async (req, res, next) => {
   }
 };
 
+const getBrokerAccount = async (req, res, next) => {
+  try {
+    const account = await getAccount();
+    res.status(200).json({
+      broker: "alpaca",
+      account: {
+        id: account.id,
+        status: account.status,
+        currency: account.currency,
+        buyingPower: Number(account.buying_power || 0),
+        equity: Number(account.equity || 0),
+        cash: Number(account.cash || 0),
+        portfolioValue: Number(account.portfolio_value || 0),
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const getBrokerPositions = async (req, res, next) => {
+  try {
+    const positions = await getPositions();
+    res.status(200).json({
+      broker: "alpaca",
+      positions: positions.map((item) => ({
+        symbol: item.symbol,
+        qty: Number(item.qty || 0),
+        side: item.side,
+        avgEntryPrice: Number(item.avg_entry_price || 0),
+        marketValue: Number(item.market_value || 0),
+        unrealizedPl: Number(item.unrealized_pl || 0),
+        unrealizedPlpc: Number(item.unrealized_plpc || 0),
+      })),
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   addInvestment,
   getInvestments,
@@ -154,4 +233,6 @@ module.exports = {
   getTradeOrders,
   addTradeOrder,
   getTradeSummary,
+  getBrokerAccount,
+  getBrokerPositions,
 };

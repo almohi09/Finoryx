@@ -146,6 +146,8 @@ const validateBankAccount = (req, res, next) => {
   const accountType = (req.body.accountType || "checking").trim();
   const balance = Number(req.body.balance ?? 0);
   const supportedTypes = ["checking", "savings", "credit", "brokerage", "wallet", "other"];
+  const provider = String(req.body.provider || "manual").trim().toLowerCase();
+  const supportedProviders = ["manual", "plaid"];
 
   if (!institutionName) {
     return res.status(400).json({ message: "Institution name is required" });
@@ -163,10 +165,15 @@ const validateBankAccount = (req, res, next) => {
     return res.status(400).json({ message: "Invalid balance" });
   }
 
+  if (!supportedProviders.includes(provider)) {
+    return res.status(400).json({ message: "Invalid provider" });
+  }
+
   req.body.institutionName = institutionName;
   req.body.accountName = accountName;
   req.body.accountType = accountType;
   req.body.balance = balance;
+  req.body.provider = provider;
   req.body.mask = String(req.body.mask || "").trim().slice(-4);
   next();
 };
@@ -181,6 +188,9 @@ const validateTradeOrder = (req, res, next) => {
   const fees = Number(req.body.fees ?? 0);
   const validSides = ["buy", "sell"];
   const validAssetTypes = ["stock", "etf", "crypto", "mutual_fund", "bond", "other"];
+  const timeInForce = String(req.body.timeInForce || req.body.time_in_force || "day").trim().toLowerCase();
+  const validTimeInForce = ["day", "gtc", "opg", "cls", "ioc", "fok"];
+  const executeLive = Boolean(req.body.executeLive);
 
   if (!symbol) {
     return res.status(400).json({ message: "Symbol is required" });
@@ -210,6 +220,10 @@ const validateTradeOrder = (req, res, next) => {
     return res.status(400).json({ message: "Fees cannot be negative" });
   }
 
+  if (!validTimeInForce.includes(timeInForce)) {
+    return res.status(400).json({ message: "Invalid time in force" });
+  }
+
   if (req.body.executedAt && Number.isNaN(Date.parse(req.body.executedAt))) {
     return res.status(400).json({ message: "Invalid trade date" });
   }
@@ -221,6 +235,8 @@ const validateTradeOrder = (req, res, next) => {
   req.body.quantity = quantity;
   req.body.price = price;
   req.body.fees = fees;
+  req.body.timeInForce = timeInForce;
+  req.body.executeLive = executeLive;
   next();
 };
 

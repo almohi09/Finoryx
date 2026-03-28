@@ -3,6 +3,9 @@ const Income = require("../models/income.model");
 const Expense = require("../models/expense.model");
 const BankAccount = require("../models/bankAccount.model");
 const BankTransaction = require("../models/bankTransaction.model");
+const { createLinkToken, exchangePublicToken, getAccounts, syncTransactions } = require("../services/plaid.service");
+const { decryptSecret, encryptSecret } = require("../utils/encryption.util");
+const { generateAdvisorInsights } = require("../services/openaiAdvisor.service");
 
 const toIncomeResponse = (income) => ({
   ...income.toObject(),
@@ -17,6 +20,8 @@ const toExpenseResponse = (expense) => ({
 const toBankAccountResponse = (account) => ({
   ...account.toObject(),
   maskedNumber: account.mask ? `****${account.mask}` : "Not set",
+  isProviderLinked: account.provider === "plaid" && Boolean(account.providerAccountId),
+  providerAccessTokenEnc: undefined,
 });
 
 const toBankTransactionResponse = (transaction) => ({
@@ -59,49 +64,97 @@ const categorizeTransaction = (description = "") => {
   return { category: "other", transactionType: "expense", direction: "debit" };
 };
 
-const buildSyntheticTransactions = (account) => {
-  const syncStamp = new Date();
-  const base = [
-    {
-      description: "Monthly Salary Credit",
-      merchant: "Employer Payroll",
-      amount: Math.max(25000, Math.round((Math.abs(account.balance) + 40000) * 0.35)),
-      date: new Date(syncStamp.getTime() - 2 * 24 * 60 * 60 * 1000),
-    },
-    {
-      description: "Swiggy Grocery Order",
-      merchant: "Swiggy Instamart",
-      amount: Math.max(650, Math.round(Math.abs(account.balance) * 0.012)),
-      date: new Date(syncStamp.getTime() - 36 * 60 * 60 * 1000),
-    },
-    {
-      description: "Fuel Station Payment",
-      merchant: "Indian Oil",
-      amount: Math.max(1200, Math.round(Math.abs(account.balance) * 0.017)),
-      date: new Date(syncStamp.getTime() - 22 * 60 * 60 * 1000),
-    },
-    {
-      description: "Mutual Fund SIP",
-      merchant: "Broker AutoPay",
-      amount: Math.max(3000, Math.round(Math.abs(account.balance) * 0.025)),
-      date: new Date(syncStamp.getTime() - 8 * 60 * 60 * 1000),
-    },
-  ];
+const mapPlaidType = (tx, direction) => {
+  const primary = String(tx?.personal_finance_category?.primary || tx?.personal_finance_category?.detailed || "").toLowerCase();
 
-  return base.map((item, index) => {
-    const tags = categorizeTransaction(item.description);
-    return {
-      userId: account.userId,
-      bankAccountId: account._id,
-      externalId: `${account._id}-${syncStamp.toISOString()}-${index}`,
-      source: "synced",
-      ...tags,
-      description: item.description,
-      merchant: item.merchant,
-      amount: item.amount,
-      date: item.date,
-    };
+  if (primary.includes("investment")) return "investment";
+  if (primary.includes("payroll") || primary.includes("income")) return "income";
+  if (direction === "credit") return "income";
+  return "expense";
+};
+
+const mapPlaidToBankTransaction = ({ userId, bankAccountId, tx }) => {
+  const rawAmount = Number(tx.amount || 0);
+  const direction = rawAmount < 0 ? "credit" : "debit";
+  const amount = Math.abs(rawAmount);
+  const dateValue = tx.authorized_date || tx.date || tx.datetime || new Date().toISOString();
+  const categoryRaw = tx?.personal_finance_category?.primary || tx?.category?.[0] || "other";
+
+  return {
+    userId,
+    bankAccountId,
+    externalId: tx.transaction_id || "",
+    source: "synced",
+    transactionType: mapPlaidType(tx, direction),
+    direction,
+    description: tx.name || tx.original_description || "Bank Transaction",
+    merchant: tx.merchant_name || "",
+    category: String(categoryRaw || "other").toLowerCase(),
+    amount,
+    date: new Date(dateValue),
+  };
+};
+
+const buildRuleBasedInsights = ({ trackedBalance, accounts, linkedBalance, foodExpense, totalExpense, investmentDebits, recurringIncome }) => {
+  const insights = [];
+
+  insights.push({
+    id: "cash-flow",
+    title: trackedBalance >= 0 ? "Cash flow remains positive" : "Cash flow needs attention",
+    tone: trackedBalance >= 0 ? "positive" : "warning",
+    summary:
+      trackedBalance >= 0
+        ? `Your tracked income is ahead of expenses by Rs ${trackedBalance.toLocaleString("en-IN")}.`
+        : `Your tracked expenses are ahead of income by Rs ${Math.abs(trackedBalance).toLocaleString("en-IN")}.`,
+    action:
+      trackedBalance >= 0
+        ? "Move part of the surplus into emergency savings or recurring investments."
+        : "Reduce discretionary spending and review the latest synced debits before next month begins.",
   });
+
+  if (accounts.length > 0) {
+    insights.push({
+      id: "bank-link",
+      title: "Linked accounts are contributing live balance context",
+      tone: "neutral",
+      summary: `${accounts.length} linked account${accounts.length > 1 ? "s" : ""} currently show a combined balance of Rs ${linkedBalance.toLocaleString("en-IN")}.`,
+      action: "Run account sync after large transfers so recommendations stay current.",
+    });
+  }
+
+  if (foodExpense > 0) {
+    insights.push({
+      id: "food-spend",
+      title: "Food and dining is a visible spending driver",
+      tone: foodExpense > totalExpense * 0.25 ? "warning" : "neutral",
+      summary: `Food-related expenses total Rs ${foodExpense.toLocaleString("en-IN")} across your tracked records.`,
+      action: foodExpense > totalExpense * 0.25 ? "Set a weekly cap for delivery and dining orders." : "Keep this category monitored to avoid leakage.",
+    });
+  }
+
+  insights.push({
+    id: "investment-rhythm",
+    title: investmentDebits > 0 ? "Investment activity is already showing up in account syncs" : "Investment activity is still light",
+    tone: investmentDebits > 0 ? "positive" : "neutral",
+    summary:
+      investmentDebits > 0
+        ? `Recent synced investment debits total Rs ${investmentDebits.toLocaleString("en-IN")}.`
+        : "No recent investment debits were detected from linked transactions.",
+    action:
+      investmentDebits > 0
+        ? "Compare your recurring debits with executed trades to confirm allocation discipline."
+        : "Set a recurring SIP or periodic buy order if long-term investing is a goal.",
+  });
+
+  insights.push({
+    id: "income-stability",
+    title: "Income baseline estimate",
+    tone: "neutral",
+    summary: `Recent recorded income suggests an average inflow near Rs ${Math.round(recurringIncome).toLocaleString("en-IN")} per entry.`,
+    action: "Use this baseline to cap fixed obligations below 60% of regular inflows.",
+  });
+
+  return insights;
 };
 
 const addIncome = async (req, res, next) => {
@@ -296,6 +349,82 @@ const addBankAccount = async (req, res, next) => {
   }
 };
 
+const createPlaidLinkToken = async (req, res, next) => {
+  try {
+    const result = await createLinkToken({
+      userId: req.user._id.toString(),
+      clientName: "Finoryx",
+    });
+
+    return res.status(200).json({
+      linkToken: result.link_token,
+      expiration: result.expiration,
+      requestId: result.request_id,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const exchangePlaidPublicToken = async (req, res, next) => {
+  try {
+    const publicToken = String(req.body.publicToken || "").trim();
+    if (!publicToken) {
+      return res.status(400).json({ message: "publicToken is required" });
+    }
+
+    const exchange = await exchangePublicToken(publicToken);
+    const accessToken = exchange.access_token;
+    const itemId = exchange.item_id;
+    const accounts = await getAccounts(accessToken);
+
+    const createdAccounts = [];
+    for (const account of accounts) {
+      const subtype = String(account.subtype || account.type || "other").toLowerCase();
+      const normalizedType = ["checking", "savings", "credit", "brokerage"].includes(subtype) ? subtype : "other";
+
+      const doc = await BankAccount.findOneAndUpdate(
+        {
+          userId: req.user._id,
+          provider: "plaid",
+          providerAccountId: account.account_id,
+        },
+        {
+          userId: req.user._id,
+          institutionName: account.official_name || account.name || "Linked Account",
+          accountName: account.name || account.official_name || "Linked Account",
+          accountType: normalizedType,
+          mask: String(account.mask || "").slice(-4),
+          balance: Number(account.balances?.current ?? account.balances?.available ?? 0),
+          provider: "plaid",
+          providerItemId: itemId,
+          providerAccountId: account.account_id,
+          providerAccessTokenEnc: encryptSecret(accessToken),
+          providerMeta: {
+            type: account.type,
+            subtype: account.subtype,
+            available: account.balances?.available,
+            limit: account.balances?.limit,
+          },
+          status: "connected",
+          lastSyncedAt: new Date(),
+        },
+        { new: true, upsert: true, setDefaultsOnInsert: true }
+      );
+
+      createdAccounts.push(doc);
+    }
+
+    return res.status(200).json({
+      message: "Bank accounts linked successfully",
+      accounts: createdAccounts.map(toBankAccountResponse),
+      itemId,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 const syncBankAccount = async (req, res, next) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
@@ -307,11 +436,63 @@ const syncBankAccount = async (req, res, next) => {
       return res.status(404).json({ message: "Bank account not found" });
     }
 
-    const newTransactions = buildSyntheticTransactions(account);
-    if (newTransactions.length) {
-      await BankTransaction.insertMany(newTransactions, { ordered: false });
+    if (account.provider !== "plaid") {
+      return res.status(400).json({ message: "Automatic sync is only supported for Plaid-linked accounts" });
     }
 
+    if (!account.providerAccessTokenEnc) {
+      return res.status(400).json({ message: "Missing provider credentials for this account" });
+    }
+
+    const accessToken = decryptSecret(account.providerAccessTokenEnc);
+    const syncResult = await syncTransactions({
+      accessToken,
+      cursor: account.providerSyncCursor || "",
+    });
+
+    let writeCount = 0;
+    for (const tx of syncResult.added) {
+      if (tx.account_id !== account.providerAccountId) continue;
+      const payload = mapPlaidToBankTransaction({
+        userId: req.user._id,
+        bankAccountId: account._id,
+        tx,
+      });
+      if (!payload.externalId) continue;
+
+      await BankTransaction.findOneAndUpdate(
+        { userId: req.user._id, externalId: payload.externalId },
+        payload,
+        { upsert: true, new: true, setDefaultsOnInsert: true, runValidators: true }
+      );
+      writeCount += 1;
+    }
+
+    for (const tx of syncResult.modified) {
+      if (tx.account_id !== account.providerAccountId) continue;
+      const payload = mapPlaidToBankTransaction({
+        userId: req.user._id,
+        bankAccountId: account._id,
+        tx,
+      });
+      if (!payload.externalId) continue;
+
+      await BankTransaction.findOneAndUpdate(
+        { userId: req.user._id, externalId: payload.externalId },
+        payload,
+        { upsert: true, new: true, runValidators: true }
+      );
+      writeCount += 1;
+    }
+
+    if (syncResult.removed.length) {
+      const removedIds = syncResult.removed.map((item) => item.transaction_id).filter(Boolean);
+      if (removedIds.length) {
+        await BankTransaction.deleteMany({ userId: req.user._id, externalId: { $in: removedIds } });
+      }
+    }
+
+    account.providerSyncCursor = syncResult.nextCursor || account.providerSyncCursor;
     account.lastSyncedAt = new Date();
     account.status = "connected";
     await account.save();
@@ -319,17 +500,20 @@ const syncBankAccount = async (req, res, next) => {
     const syncedTransactions = await BankTransaction.find({ bankAccountId: account._id })
       .populate("bankAccountId", "accountName institutionName")
       .sort({ date: -1 })
-      .limit(8);
+      .limit(30);
 
     return res.status(200).json({
       message: "Bank account synced successfully",
       account: toBankAccountResponse(account),
       transactions: syncedTransactions.map(toBankTransactionResponse),
+      delta: {
+        added: syncResult.added.length,
+        modified: syncResult.modified.length,
+        removed: syncResult.removed.length,
+        written: writeCount,
+      },
     });
   } catch (err) {
-    if (err?.code === 11000) {
-      return res.status(200).json({ message: "Bank account was already synced for this cycle" });
-    }
     next(err);
   }
 };
@@ -339,7 +523,7 @@ const getBankTransactions = async (req, res, next) => {
     const transactions = await BankTransaction.find({ userId: req.user._id })
       .populate("bankAccountId", "accountName institutionName")
       .sort({ date: -1, createdAt: -1 })
-      .limit(100);
+      .limit(300);
 
     return res.status(200).json({ transactions: transactions.map(toBankTransactionResponse) });
   } catch (err) {
@@ -360,9 +544,9 @@ const getAdvisorInsights = async (req, res, next) => {
         { $group: { _id: null, total: { $sum: "$amount" } } },
       ]),
       BankAccount.find({ userId: req.user._id }).sort({ createdAt: -1 }),
-      BankTransaction.find({ userId: req.user._id }).sort({ date: -1 }).limit(20),
-      Expense.find({ userId: req.user._id }).sort({ date: -1 }).limit(50),
-      Income.find({ userId: req.user._id }).sort({ date: -1 }).limit(20),
+      BankTransaction.find({ userId: req.user._id }).sort({ date: -1 }).limit(40),
+      Expense.find({ userId: req.user._id }).sort({ date: -1 }).limit(60),
+      Income.find({ userId: req.user._id }).sort({ date: -1 }).limit(30),
     ]);
 
     const totalIncome = income[0]?.total || 0;
@@ -377,63 +561,32 @@ const getAdvisorInsights = async (req, res, next) => {
       .reduce((sum, item) => sum + (item.amount || 0), 0);
     const recurringIncome = incomes.slice(0, 3).reduce((sum, item) => sum + (item.amount || 0), 0) / Math.max(incomes.slice(0, 3).length, 1);
 
-    const insights = [];
-
-    insights.push({
-      id: "cash-flow",
-      title: trackedBalance >= 0 ? "Cash flow remains positive" : "Cash flow needs attention",
-      tone: trackedBalance >= 0 ? "positive" : "warning",
-      summary:
-        trackedBalance >= 0
-          ? `Your tracked income is ahead of expenses by Rs ${trackedBalance.toLocaleString("en-IN")}.`
-          : `Your tracked expenses are ahead of income by Rs ${Math.abs(trackedBalance).toLocaleString("en-IN")}.`,
-      action:
-        trackedBalance >= 0
-          ? "Move part of the surplus into emergency savings or recurring investments."
-          : "Reduce discretionary spending and review the latest synced debits before next month begins.",
+    const ruleInsights = buildRuleBasedInsights({
+      trackedBalance,
+      accounts,
+      linkedBalance,
+      foodExpense,
+      totalExpense,
+      investmentDebits,
+      recurringIncome,
     });
 
-    if (accounts.length > 0) {
-      insights.push({
-        id: "bank-link",
-        title: "Linked accounts are contributing live balance context",
-        tone: "neutral",
-        summary: `${accounts.length} linked account${accounts.length > 1 ? "s" : ""} currently show a combined balance of Rs ${linkedBalance.toLocaleString("en-IN")}.`,
-        action: "Run account sync after large transfers so recommendations stay current.",
-      });
-    }
+    const advisorInput = {
+      totals: { totalIncome, totalExpense, trackedBalance, linkedBalance },
+      accounts: {
+        linkedAccounts: accounts.length,
+        syncedTransactions: transactions.length,
+      },
+      behavior: {
+        foodExpense,
+        foodExpenseShare: totalExpense > 0 ? foodExpense / totalExpense : 0,
+        investmentDebits,
+        recurringIncome,
+      },
+    };
 
-    if (foodExpense > 0) {
-      insights.push({
-        id: "food-spend",
-        title: "Food and dining is a visible spending driver",
-        tone: foodExpense > totalExpense * 0.25 ? "warning" : "neutral",
-        summary: `Food-related expenses total Rs ${foodExpense.toLocaleString("en-IN")} across your tracked records.`,
-        action: foodExpense > totalExpense * 0.25 ? "Set a weekly cap for delivery and dining orders." : "Keep this category monitored to avoid leakage.",
-      });
-    }
-
-    insights.push({
-      id: "investment-rhythm",
-      title: investmentDebits > 0 ? "Investment activity is already showing up in account syncs" : "Investment activity is still light",
-      tone: investmentDebits > 0 ? "positive" : "neutral",
-      summary:
-        investmentDebits > 0
-          ? `Recent synced investment debits total Rs ${investmentDebits.toLocaleString("en-IN")}.`
-          : "No recent investment debits were detected from linked transactions.",
-      action:
-        investmentDebits > 0
-          ? "Compare your recurring debits with executed trades to confirm allocation discipline."
-          : "Set a recurring SIP or periodic buy order if long-term investing is a goal.",
-    });
-
-    insights.push({
-      id: "income-stability",
-      title: "Income baseline estimate",
-      tone: "neutral",
-      summary: `Recent recorded income suggests an average inflow near Rs ${Math.round(recurringIncome).toLocaleString("en-IN")} per entry.`,
-      action: "Use this baseline to cap fixed obligations below 60% of regular inflows.",
-    });
+    const aiInsights = await generateAdvisorInsights(advisorInput);
+    const insights = aiInsights || ruleInsights;
 
     return res.status(200).json({
       insights,
@@ -444,6 +597,9 @@ const getAdvisorInsights = async (req, res, next) => {
         linkedBalance,
         linkedAccounts: accounts.length,
         syncedTransactions: transactions.length,
+      },
+      metadata: {
+        source: aiInsights ? "openai" : "rules",
       },
     });
   } catch (err) {
@@ -463,6 +619,8 @@ module.exports = {
   getCategoryBreakdown,
   getBankAccounts,
   addBankAccount,
+  createPlaidLinkToken,
+  exchangePlaidPublicToken,
   syncBankAccount,
   getBankTransactions,
   getAdvisorInsights,

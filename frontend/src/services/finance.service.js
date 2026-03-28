@@ -18,6 +18,8 @@ export const financeService = {
   getCategoryBreakdown: (params) => api.get("/finance/category-breakdown", { params }),
 
   // Bank integrations
+  createBankLinkToken: () => api.post("/finance/bank/link-token"),
+  exchangeBankPublicToken: (publicToken) => api.post("/finance/bank/exchange-public-token", { publicToken }),
   getBankAccounts: () => api.get("/finance/bank-accounts"),
   addBankAccount: (data) => api.post("/finance/bank-accounts", data),
   syncBankAccount: (id) => api.post(`/finance/bank-accounts/${id}/sync`),

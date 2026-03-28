@@ -40,8 +40,34 @@ const bankAccountSchema = new mongoose.Schema(
     },
     provider: {
       type: String,
+      enum: ["manual", "plaid"],
       default: "manual",
       trim: true,
+    },
+    providerItemId: {
+      type: String,
+      default: "",
+      trim: true,
+      index: true,
+    },
+    providerAccountId: {
+      type: String,
+      default: "",
+      trim: true,
+      index: true,
+    },
+    providerAccessTokenEnc: {
+      type: String,
+      default: "",
+    },
+    providerSyncCursor: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    providerMeta: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
     },
     lastSyncedAt: {
       type: Date,
@@ -49,6 +75,17 @@ const bankAccountSchema = new mongoose.Schema(
     },
   },
   { timestamps: true }
+);
+
+bankAccountSchema.index(
+  { userId: 1, provider: 1, providerAccountId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      provider: { $eq: "plaid" },
+      providerAccountId: { $type: "string", $ne: "" },
+    },
+  }
 );
 
 module.exports = mongoose.model("BankAccount", bankAccountSchema);

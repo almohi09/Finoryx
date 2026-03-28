@@ -9,4 +9,6 @@ export const investmentService = {
   getTrades: () => api.get("/investments/trades"),
   addTrade: (data) => api.post("/investments/trades", data),
   getTradeSummary: () => api.get("/investments/trades/summary"),
+  getBrokerAccount: () => api.get("/investments/broker/account"),
+  getBrokerPositions: () => api.get("/investments/broker/positions"),
 };
