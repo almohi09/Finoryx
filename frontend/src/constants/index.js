@@ -8,36 +8,11 @@ const normalizeApiBaseUrl = (url) =>
 const buildApiConfig = () => {
   if (configuredApiUrl) {
     return {
-      apiBaseUrl: normalizeApiBaseUrl(configuredApiUrl),
+      apiBaseUrl: configuredApiUrl.replace(/\/+$/, ""), // only trim trailing slash
       error: "",
     };
   }
-
-  if (import.meta.env.DEV) {
-    return {
-      apiBaseUrl: "http://localhost:3000/api",
-      error: "",
-    };
-  }
-
-  if (typeof window !== "undefined") {
-    const { hostname } = window.location;
-    const isLocalHost = ["localhost", "127.0.0.1"].includes(hostname);
-
-    if (isLocalHost) {
-      return {
-        apiBaseUrl: `${window.location.origin}/api`,
-        error: "",
-      };
-    }
-  }
-
-  return {
-    apiBaseUrl: "",
-    error:
-      "Missing VITE_API_URL in production. Set it to your backend Render URL, for example https://your-backend.onrender.com/api.",
-  };
-};
+}
 
 const resolveApiBaseUrl = () => {
   const { apiBaseUrl, error } = buildApiConfig();
