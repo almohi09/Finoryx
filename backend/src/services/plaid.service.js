@@ -85,9 +85,34 @@ const syncTransactions = async ({ accessToken, cursor = "" }) => {
   return { added, modified, removed, nextCursor };
 };
 
+const searchInstitutions = async (query, limit = 10) => {
+  const q = String(query || "").trim();
+  if (!q) return [];
+
+  const data = await plaidRequest("/institutions/search", {
+    query: q,
+    products: integrationConfig.plaid.products.length ? integrationConfig.plaid.products : ["transactions"],
+    country_codes: integrationConfig.plaid.countryCodes.length ? integrationConfig.plaid.countryCodes : ["US"],
+    options: {
+      include_optional_metadata: true,
+      limit: Math.max(1, Math.min(Number(limit) || 10, 25)),
+    },
+  });
+
+  const institutions = Array.isArray(data.institutions) ? data.institutions : [];
+  return institutions.map((item) => ({
+    institutionId: item.institution_id,
+    name: item.name,
+    primaryColor: item.primary_color || "",
+    url: item.url || "",
+    logo: item.logo || "",
+  }));
+};
+
 module.exports = {
   createLinkToken,
   exchangePublicToken,
   getAccounts,
   syncTransactions,
+  searchInstitutions,
 };

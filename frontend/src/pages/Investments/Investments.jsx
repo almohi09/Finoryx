@@ -48,6 +48,10 @@ const Investments = () => {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(defaultInvestmentForm);
   const [tradeForm, setTradeForm] = useState(defaultTradeForm);
+  const [assetSearchQuery, setAssetSearchQuery] = useState("");
+  const [assetSuggestions, setAssetSuggestions] = useState([]);
+  const [assetSearchOpen, setAssetSearchOpen] = useState(false);
+  const [assetSearchLoading, setAssetSearchLoading] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -70,6 +74,33 @@ const Investments = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (!showTradeModal) return;
+
+    const query = assetSearchQuery.trim();
+    if (!query) {
+      setAssetSuggestions([]);
+      setAssetSearchOpen(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setAssetSearchLoading(true);
+      try {
+        const { data } = await investmentService.searchBrokerAssets(query, 15);
+        const assets = data?.assets || [];
+        setAssetSuggestions(assets);
+        setAssetSearchOpen(true);
+      } catch {
+        setAssetSuggestions([]);
+      } finally {
+        setAssetSearchLoading(false);
+      }
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [assetSearchQuery, showTradeModal]);
 
   const openAdd = () => {
     setEditItem(null);
@@ -126,6 +157,9 @@ const Investments = () => {
       await investmentService.addTrade(tradeForm);
       toast.success("Trade recorded");
       setTradeForm(defaultTradeForm);
+      setAssetSearchQuery("");
+      setAssetSuggestions([]);
+      setAssetSearchOpen(false);
       setShowTradeModal(false);
       fetchData();
     } catch (error) {
@@ -133,6 +167,22 @@ const Investments = () => {
     } finally {
       setSaving(false);
     }
+  };
+
+  const openTradeModal = () => {
+    setShowTradeModal(true);
+    setAssetSearchQuery(tradeForm.symbol ? `${tradeForm.symbol} - ${tradeForm.assetName}` : "");
+  };
+
+  const handleSelectAsset = (asset) => {
+    setTradeForm((prev) => ({
+      ...prev,
+      symbol: asset.symbol,
+      assetName: asset.name,
+      assetType: asset.assetType || prev.assetType,
+    }));
+    setAssetSearchQuery(`${asset.symbol} - ${asset.name}`);
+    setAssetSearchOpen(false);
   };
 
   const totalInvested = investments.reduce((sum, item) => sum + (item.amount || 0), 0);
@@ -153,7 +203,7 @@ const Investments = () => {
           <p className="muted-text text-sm mt-1">Track portfolio performance and execute paper-trading style orders in one place.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="ghost" onClick={() => setShowTradeModal(true)}><ArrowLeftRight size={14} /> Add Trade</Button>
+          <Button variant="ghost" onClick={openTradeModal}><ArrowLeftRight size={14} /> Add Trade</Button>
           <Button onClick={openAdd}><Plus size={14} /> Add Investment</Button>
         </div>
       </div>
@@ -317,7 +367,7 @@ const Investments = () => {
               <p className="text-sm font-display font-700 mt-3">{trades[0] ? `${trades[0].side.toUpperCase()} ${trades[0].symbol}` : "No trades yet"}</p>
               <p className="text-xs muted-text mt-2">{trades[0] ? formatDate(trades[0].executedAt) : "Record a trade to populate this card."}</p>
             </div>
-            <Button className="w-full" onClick={() => setShowTradeModal(true)}>
+            <Button className="w-full" onClick={openTradeModal}>
               <ArrowLeftRight size={14} /> Record Trade
             </Button>
           </div>
@@ -341,11 +391,54 @@ const Investments = () => {
         </div>
       </Modal>
 
-      <Modal isOpen={showTradeModal} onClose={() => setShowTradeModal(false)} title="Record Trade" size="lg">
+      <Modal
+        isOpen={showTradeModal}
+        onClose={() => {
+          setShowTradeModal(false);
+          setAssetSearchOpen(false);
+        }}
+        title="Record Trade"
+        size="lg"
+      >
         <div className="space-y-4">
+          <div className="relative">
+            <Input
+              label="Search Symbol or Asset"
+              placeholder="e.g. AAPL or Apple"
+              value={assetSearchQuery}
+              onChange={(e) => {
+                setAssetSearchQuery(e.target.value);
+                setAssetSearchOpen(true);
+              }}
+            />
+
+            {assetSearchOpen ? (
+              <div
+                className="absolute z-30 mt-1 w-full rounded-xl border max-h-52 overflow-y-auto"
+                style={{ background: "var(--bg-elevated)", borderColor: "var(--border-light)" }}
+              >
+                {assetSearchLoading ? (
+                  <div className="px-3 py-2 text-xs muted-text">Searching assets...</div>
+                ) : assetSuggestions.length === 0 ? (
+                  <div className="px-3 py-2 text-xs muted-text">No matching assets</div>
+                ) : assetSuggestions.map((asset) => (
+                  <button
+                    type="button"
+                    key={`${asset.symbol}-${asset.exchange}`}
+                    className="w-full text-left px-3 py-2 hover:bg-white/5 transition-colors"
+                    onClick={() => handleSelectAsset(asset)}
+                  >
+                    <p className="text-sm font-display font-700">{asset.symbol} <span className="muted-text">| {asset.exchange}</span></p>
+                    <p className="text-xs muted-text mt-1">{asset.name}</p>
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input label="Symbol" placeholder="e.g. RELIANCE" value={tradeForm.symbol} onChange={(e) => setTradeForm({ ...tradeForm, symbol: e.target.value.toUpperCase() })} />
-            <Input label="Asset Name" placeholder="e.g. Reliance Industries" value={tradeForm.assetName} onChange={(e) => setTradeForm({ ...tradeForm, assetName: e.target.value })} />
+            <Input label="Selected Symbol" value={tradeForm.symbol} readOnly />
+            <Input label="Selected Asset" value={tradeForm.assetName} readOnly />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Select label="Asset Type" value={tradeForm.assetType} onChange={(e) => setTradeForm({ ...tradeForm, assetType: e.target.value })} options={TRADE_ASSET_TYPES} />

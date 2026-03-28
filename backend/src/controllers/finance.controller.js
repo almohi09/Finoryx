@@ -3,7 +3,7 @@ const Income = require("../models/income.model");
 const Expense = require("../models/expense.model");
 const BankAccount = require("../models/bankAccount.model");
 const BankTransaction = require("../models/bankTransaction.model");
-const { createLinkToken, exchangePublicToken, getAccounts, syncTransactions } = require("../services/plaid.service");
+const { createLinkToken, exchangePublicToken, getAccounts, syncTransactions, searchInstitutions } = require("../services/plaid.service");
 const { decryptSecret, encryptSecret } = require("../utils/encryption.util");
 const { generateAdvisorInsights } = require("../services/openaiAdvisor.service");
 
@@ -425,6 +425,21 @@ const exchangePlaidPublicToken = async (req, res, next) => {
   }
 };
 
+const searchBankInstitutions = async (req, res, next) => {
+  try {
+    const q = String(req.query.q || "").trim();
+    if (!q) {
+      return res.status(200).json({ institutions: [] });
+    }
+
+    const limit = Number(req.query.limit || 10);
+    const institutions = await searchInstitutions(q, limit);
+    return res.status(200).json({ institutions });
+  } catch (err) {
+    next(err);
+  }
+};
+
 const syncBankAccount = async (req, res, next) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
@@ -621,6 +636,7 @@ module.exports = {
   addBankAccount,
   createPlaidLinkToken,
   exchangePlaidPublicToken,
+  searchBankInstitutions,
   syncBankAccount,
   getBankTransactions,
   getAdvisorInsights,

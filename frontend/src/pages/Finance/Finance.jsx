@@ -82,6 +82,10 @@ const Finance = () => {
   const [saving, setSaving] = useState(false);
   const [syncingId, setSyncingId] = useState("");
   const [linkingPlaid, setLinkingPlaid] = useState(false);
+  const [institutionQuery, setInstitutionQuery] = useState("");
+  const [institutionSuggestions, setInstitutionSuggestions] = useState([]);
+  const [institutionSearchOpen, setInstitutionSearchOpen] = useState(false);
+  const [institutionSearchLoading, setInstitutionSearchLoading] = useState(false);
 
   const loadPlaidScript = async () => {
     if (window.Plaid?.create) return;
@@ -131,6 +135,31 @@ const Finance = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (!showBankModal) return;
+    const query = institutionQuery.trim();
+    if (!query || query.length < 2) {
+      setInstitutionSuggestions([]);
+      setInstitutionSearchOpen(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setInstitutionSearchLoading(true);
+      try {
+        const { data } = await financeService.searchBankInstitutions(query, 10);
+        setInstitutionSuggestions(data?.institutions || []);
+        setInstitutionSearchOpen(true);
+      } catch {
+        setInstitutionSuggestions([]);
+      } finally {
+        setInstitutionSearchLoading(false);
+      }
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [institutionQuery, showBankModal]);
 
   const openAdd = (type) => {
     setModalType(type);
@@ -199,6 +228,9 @@ const Finance = () => {
       await financeService.addBankAccount(bankForm);
       toast.success("Bank account linked");
       setBankForm(defaultBankForm);
+      setInstitutionQuery("");
+      setInstitutionSuggestions([]);
+      setInstitutionSearchOpen(false);
       setShowBankModal(false);
       fetchData();
     } catch (error) {
@@ -250,6 +282,12 @@ const Finance = () => {
     } finally {
       setLinkingPlaid(false);
     }
+  };
+
+  const handleSelectInstitution = (institution) => {
+    setBankForm((prev) => ({ ...prev, institutionName: institution.name || prev.institutionName }));
+    setInstitutionQuery(institution.name || "");
+    setInstitutionSearchOpen(false);
   };
 
   const allTx = [
@@ -388,7 +426,15 @@ const Finance = () => {
           <Button variant="ghost" size="sm" className="min-w-[11rem]" loading={linkingPlaid} onClick={handlePlaidConnect}>
             <Landmark size={13} /> Connect Plaid
           </Button>
-          <Button size="sm" className="min-w-[10rem]" onClick={() => setShowBankModal(true)}>
+          <Button
+            size="sm"
+            className="min-w-[10rem]"
+            onClick={() => {
+              setInstitutionQuery(bankForm.institutionName || "");
+              setInstitutionSearchOpen(false);
+              setShowBankModal(true);
+            }}
+          >
             <Landmark size={13} /> Link Account
           </Button>
         </div>
@@ -661,15 +707,52 @@ const Finance = () => {
         </div>
       </Modal>
 
-      <Modal isOpen={showBankModal} onClose={() => setShowBankModal(false)} title="Link Bank Account" size="lg">
+      <Modal
+        isOpen={showBankModal}
+        onClose={() => {
+          setInstitutionSearchOpen(false);
+          setShowBankModal(false);
+        }}
+        title="Link Bank Account"
+        size="lg"
+      >
         <div className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input
-              label="Institution"
-              placeholder="e.g. HDFC Bank"
-              value={bankForm.institutionName}
-              onChange={(e) => setBankForm({ ...bankForm, institutionName: e.target.value })}
-            />
+            <div className="relative">
+              <Input
+                label="Institution"
+                placeholder="Search institution (e.g. Chase, Wells Fargo)"
+                value={institutionQuery}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setInstitutionQuery(value);
+                  setBankForm((prev) => ({ ...prev, institutionName: value }));
+                  setInstitutionSearchOpen(true);
+                }}
+              />
+              {institutionSearchOpen ? (
+                <div
+                  className="absolute z-30 mt-1 w-full rounded-xl border max-h-52 overflow-y-auto"
+                  style={{ background: "var(--bg-elevated)", borderColor: "var(--border-light)" }}
+                >
+                  {institutionSearchLoading ? (
+                    <div className="px-3 py-2 text-xs muted-text">Searching institutions...</div>
+                  ) : institutionSuggestions.length === 0 ? (
+                    <div className="px-3 py-2 text-xs muted-text">No matching institutions</div>
+                  ) : institutionSuggestions.map((institution) => (
+                    <button
+                      type="button"
+                      key={institution.institutionId || institution.name}
+                      className="w-full text-left px-3 py-2 hover:bg-white/5 transition-colors"
+                      onClick={() => handleSelectInstitution(institution)}
+                    >
+                      <p className="text-sm font-display font-700">{institution.name}</p>
+                      {institution.url ? <p className="text-xs muted-text mt-1">{institution.url}</p> : null}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </div>
             <Input
               label="Account Name"
               placeholder="e.g. Primary Salary Account"

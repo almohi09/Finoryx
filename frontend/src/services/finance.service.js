@@ -20,6 +20,7 @@ export const financeService = {
   // Bank integrations
   createBankLinkToken: () => api.post("/finance/bank/link-token"),
   exchangeBankPublicToken: (publicToken) => api.post("/finance/bank/exchange-public-token", { publicToken }),
+  searchBankInstitutions: (q, limit = 10) => api.get("/finance/bank/institutions/search", { params: { q, limit } }),
   getBankAccounts: () => api.get("/finance/bank-accounts"),
   addBankAccount: (data) => api.post("/finance/bank-accounts", data),
   syncBankAccount: (id) => api.post(`/finance/bank-accounts/${id}/sync`),

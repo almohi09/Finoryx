@@ -42,6 +42,7 @@ This project now supports production-grade external integrations for:
 ### Finance (Plaid + Advisor)
 - `POST /api/finance/bank/link-token`
 - `POST /api/finance/bank/exchange-public-token`
+- `GET /api/finance/bank/institutions/search?q=chase` for institution search-select in manual link modal
 - `POST /api/finance/bank-accounts/:id/sync`
 - `GET /api/finance/bank-transactions`
 - `GET /api/finance/advisor`
@@ -50,6 +51,7 @@ This project now supports production-grade external integrations for:
 - `POST /api/investments/trades` with `executeLive: true` to place broker order
 - `GET /api/investments/broker/account`
 - `GET /api/investments/broker/positions`
+- `GET /api/investments/broker/assets/search?q=AAPL` for search-select trade entry
 
 ## 3. How To Verify Each Integration
 

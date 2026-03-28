@@ -11,4 +11,5 @@ export const investmentService = {
   getTradeSummary: () => api.get("/investments/trades/summary"),
   getBrokerAccount: () => api.get("/investments/broker/account"),
   getBrokerPositions: () => api.get("/investments/broker/positions"),
+  searchBrokerAssets: (q, limit = 15) => api.get("/investments/broker/assets/search", { params: { q, limit } }),
 };

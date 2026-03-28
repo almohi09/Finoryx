@@ -15,6 +15,7 @@ const {
   addBankAccount,
   createPlaidLinkToken,
   exchangePlaidPublicToken,
+  searchBankInstitutions,
   syncBankAccount,
   getBankTransactions,
   getAdvisorInsights,
@@ -52,6 +53,7 @@ financeRouter.get("/summary", authUser, getSummary);
 financeRouter.get("/category-breakdown", authUser, getCategoryBreakdown);
 financeRouter.post("/bank/link-token", authUser, createPlaidLinkToken);
 financeRouter.post("/bank/exchange-public-token", authUser, exchangePlaidPublicToken);
+financeRouter.get("/bank/institutions/search", authUser, searchBankInstitutions);
 financeRouter.get("/bank-accounts", authUser, getBankAccounts);
 financeRouter.post("/bank-accounts", authUser, validateBankAccount, addBankAccount);
 financeRouter.post("/bank-accounts/:id/sync", authUser, syncBankAccount);

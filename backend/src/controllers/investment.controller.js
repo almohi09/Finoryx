@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const Investment = require("../models/investment.model");
 const TradeOrder = require("../models/tradeOrder.model");
-const { getAccount, getPositions, submitOrder } = require("../services/alpaca.service");
+const { getAccount, getPositions, submitOrder, searchAssets } = require("../services/alpaca.service");
 
 const toInvestmentResponse = (investment) => ({
   ...investment.toObject(),
@@ -225,6 +225,21 @@ const getBrokerPositions = async (req, res, next) => {
   }
 };
 
+const searchBrokerAssets = async (req, res, next) => {
+  try {
+    const q = String(req.query.q || "").trim();
+    if (!q) {
+      return res.status(200).json({ assets: [] });
+    }
+
+    const limit = Number(req.query.limit || 15);
+    const assets = await searchAssets(q, limit);
+    return res.status(200).json({ assets });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   addInvestment,
   getInvestments,
@@ -235,4 +250,5 @@ module.exports = {
   getTradeSummary,
   getBrokerAccount,
   getBrokerPositions,
+  searchBrokerAssets,
 };
