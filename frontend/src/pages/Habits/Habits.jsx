@@ -124,7 +124,7 @@ const Habits = () => {
   const weeklyChart = buildWeeklyChart(habits);
 
   return (
-    <div className="space-y-6 max-w-7xl">
+    <div className="space-y-4 max-w-7xl mx-auto w-full">
       <div className="flex items-center justify-between animate-fade-up">
         <div>
           <h1 className="page-title">Habit Tracker</h1>
@@ -148,7 +148,7 @@ const Habits = () => {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 animate-fade-up animate-delay-200 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 animate-fade-up animate-delay-200 items-start">
         <Card className="self-start">
           <h3 className="section-title mb-1">This Week</h3>
           <p className="text-xs muted-text mb-4">Daily completions</p>
@@ -257,3 +257,4 @@ const Habits = () => {
 };
 
 export default Habits;
+

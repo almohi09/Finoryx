@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Mail, Lock, User, Eye, EyeOff, Coins, Phone } from "lucide-react";
+import { Mail, Lock, User, Eye, EyeOff, Phone } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { authService } from "../../services/auth.service";
 import toast from "react-hot-toast";
@@ -8,6 +8,7 @@ import Button from "../../components/ui/Button";
 import Input from "../../components/ui/Input";
 import Select from "../../components/ui/Select";
 import { setStoredToken } from "../../utils/auth";
+import BrandLogo from "../../components/branding/BrandLogo";
 
 const GOALS = [
   { value: "save_more", label: "Save more money" },
@@ -60,7 +61,7 @@ const Register = () => {
       });
       setStoredToken(data.token);
       login(data.user);
-      toast.success("Account created! Welcome to WealthWise");
+      toast.success("Account created! Welcome to Fynorix");
       navigate("/dashboard");
     } catch (err) {
       toast.error(err.response?.data?.message || "Registration failed");
@@ -73,10 +74,7 @@ const Register = () => {
     <div className="min-h-screen flex items-center justify-center p-6" style={{ background: "var(--bg-primary)" }}>
       <div className="w-full max-w-lg animate-fade-up">
         <div className="flex items-center gap-2.5 mb-8">
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: "var(--accent-gold)" }}>
-            <Coins size={15} color="#0e0d09" strokeWidth={2.5} />
-          </div>
-          <span className="font-display font-800 text-lg">WealthWise</span>
+          <BrandLogo size="sm" />
         </div>
 
         <h2 className="text-3xl font-display font-800 mb-1">Create your account</h2>
@@ -142,3 +140,4 @@ const Register = () => {
 };
 
 export default Register;
+

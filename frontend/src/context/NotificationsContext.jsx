@@ -225,7 +225,7 @@ export const NotificationsProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
 
-  const storageKey = user?._id ? `finoryx.notifications.read.${user._id}` : "";
+  const storageKey = user?._id ? `fynorix.notifications.read.${user._id}` : "";
 
   useEffect(() => {
     if (!storageKey) {

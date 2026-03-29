@@ -1,4 +1,4 @@
-const AUTH_TOKEN_KEY = "finoryx.auth.token";
+const AUTH_TOKEN_KEY = "fynorix.auth.token";
 
 export const getStoredToken = () => {
   if (typeof window === "undefined") return "";

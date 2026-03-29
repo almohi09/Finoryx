@@ -1,4 +1,4 @@
-# Finoryx Frontend
+# Fynorix Frontend
 
 ## Local development
 

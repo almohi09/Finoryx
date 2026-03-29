@@ -112,7 +112,7 @@ const Account = () => {
   };
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="space-y-4 max-w-5xl mx-auto w-full">
       <div className="flex items-center justify-between animate-fade-up">
         <div>
           <h1 className="page-title">Account</h1>
@@ -126,9 +126,9 @@ const Account = () => {
         )}
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[1.15fr_0.85fr] gap-5">
+      <div className="grid grid-cols-1 xl:grid-cols-[1.15fr_0.85fr] gap-4">
         <Card className="animate-fade-up animate-delay-100">
-          <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="section-title">Profile</h3>
               <p className="muted-text text-sm mt-1">Update the identity information shown across the app</p>
@@ -169,7 +169,7 @@ const Account = () => {
         </Card>
 
         <Card className="animate-fade-up animate-delay-200">
-          <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="section-title">Change Password</h3>
               <p className="muted-text text-sm mt-1">Use your current password to set a new one</p>
@@ -227,3 +227,4 @@ const Account = () => {
 };
 
 export default Account;
+

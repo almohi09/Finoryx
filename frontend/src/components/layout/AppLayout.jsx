@@ -44,7 +44,7 @@ const AppLayout = () => {
 
         <div className="flex flex-col flex-1 min-w-0 lg:ml-60">
           <Navbar onMenuToggle={() => setSidebarOpen((v) => !v)} onFeedbackClick={() => setFeedbackOpen(true)} />
-          <main className="flex-1 overflow-y-auto p-4 md:p-6">
+          <main className="flex-1 overflow-y-auto p-3 md:p-4">
             <Outlet />
           </main>
         </div>

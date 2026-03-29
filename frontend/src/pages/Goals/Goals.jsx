@@ -108,7 +108,7 @@ const Goals = () => {
   const completedGoals = goals.filter((g) => g.currentAmount >= g.targetAmount).length;
 
   return (
-    <div className="space-y-6 max-w-7xl">
+    <div className="space-y-4 max-w-7xl mx-auto w-full">
       <div className="flex items-center justify-between animate-fade-up">
         <div>
           <h1 className="page-title">Savings Goals</h1>
@@ -117,7 +117,7 @@ const Goals = () => {
         <Button onClick={openAdd}><Plus size={14} /> New Goal</Button>
       </div>
 
-      <div className="grid grid-cols-3 gap-4 animate-fade-up animate-delay-100">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 animate-fade-up animate-delay-100">
         {[
           { label: "Total Target", value: formatCurrency(totalTarget), color: "text-amber-400" },
           { label: "Total Saved", value: formatCurrency(totalSaved), color: "text-green-400" },
@@ -236,3 +236,4 @@ const Goals = () => {
 };
 
 export default Goals;
+

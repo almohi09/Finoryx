@@ -111,7 +111,7 @@ const addTradeOrder = async (req, res, next) => {
     let filledQty = req.body.quantity;
     let filledAvgPrice = req.body.price;
     let rawBrokerResponse = null;
-    const clientOrderId = `finoryx-${req.user._id}-${Date.now()}`;
+    const clientOrderId = `fynorix-${req.user._id}-${Date.now()}`;
 
     if (req.body.executeLive) {
       const brokerOrder = await submitOrder({

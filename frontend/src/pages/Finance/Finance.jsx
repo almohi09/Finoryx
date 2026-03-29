@@ -86,6 +86,7 @@ const Finance = () => {
   const [institutionSuggestions, setInstitutionSuggestions] = useState([]);
   const [institutionSearchOpen, setInstitutionSearchOpen] = useState(false);
   const [institutionSearchLoading, setInstitutionSearchLoading] = useState(false);
+  const [plaidError, setPlaidError] = useState("");
 
   const loadPlaidScript = async () => {
     if (window.Plaid?.create) return;
@@ -93,6 +94,10 @@ const Finance = () => {
     await new Promise((resolve, reject) => {
       const existing = document.querySelector('script[data-plaid-link="true"]');
       if (existing) {
+        if (window.Plaid?.create) {
+          resolve();
+          return;
+        }
         existing.addEventListener("load", resolve, { once: true });
         existing.addEventListener("error", reject, { once: true });
         return;
@@ -255,6 +260,7 @@ const Finance = () => {
 
   const handlePlaidConnect = async () => {
     setLinkingPlaid(true);
+    setPlaidError("");
     try {
       const { data } = await financeService.createBankLinkToken();
       const linkToken = data?.linkToken;
@@ -278,6 +284,7 @@ const Finance = () => {
       });
       handler.open();
     } catch (error) {
+      setPlaidError(error.response?.data?.message || error.message || "Plaid is currently unavailable");
       toast.error(error.response?.data?.message || error.message || "Failed to initialize Plaid Link");
     } finally {
       setLinkingPlaid(false);
@@ -314,8 +321,8 @@ const Finance = () => {
   const topExpenseCategory = categoryData.slice().sort((a, b) => b.value - a.value)[0] || null;
 
   return (
-    <div className="space-y-6 max-w-7xl">
-      <div className="grid grid-cols-1 xl:grid-cols-[1.35fr_0.9fr] gap-5 animate-fade-up items-start">
+    <div className="space-y-4 max-w-7xl mx-auto w-full">
+      <div className="grid grid-cols-1 xl:grid-cols-[1.35fr_0.9fr] gap-4 animate-fade-up items-start">
         <Card className="relative overflow-hidden p-0">
           <div
             className="absolute inset-0 opacity-90"
@@ -439,8 +446,13 @@ const Finance = () => {
           </Button>
         </div>
       </div>
+      {plaidError ? (
+        <div className="rounded-2xl border px-4 py-3 text-sm text-rose-300" style={{ background: "rgba(244,63,94,0.08)", borderColor: "rgba(244,63,94,0.25)" }}>
+          Plaid integration status: {plaidError}
+        </div>
+      ) : null}
 
-      <div className="grid grid-cols-1 xl:grid-cols-[1.05fr_0.95fr] gap-5 animate-fade-up animate-delay-200 items-start">
+      <div className="grid grid-cols-1 xl:grid-cols-[1.05fr_0.95fr] gap-4 animate-fade-up animate-delay-200 items-start">
         <Card className="overflow-hidden">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -452,7 +464,7 @@ const Finance = () => {
 
           <div className="grid gap-3">
             {bankAccounts.length === 0 ? (
-              <div className="text-center py-12 muted-text text-sm">No bank accounts linked yet</div>
+              <div className="text-center py-8 muted-text text-sm">No bank accounts linked yet</div>
             ) : bankAccounts.map((account) => (
               <div key={account._id} className="rounded-2xl border p-4" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
                 <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
@@ -495,7 +507,7 @@ const Finance = () => {
 
           <div className="space-y-3 max-h-[30rem] overflow-y-auto pr-1">
             {bankTransactions.length === 0 ? (
-              <div className="text-center py-12 muted-text text-sm">Sync a linked account to populate this feed</div>
+              <div className="text-center py-8 muted-text text-sm">Sync a linked account to populate this feed</div>
             ) : bankTransactions.slice(0, 12).map((tx) => {
               const isCredit = tx.direction === "credit";
               return (
@@ -519,7 +531,7 @@ const Finance = () => {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[0.95fr_1.45fr] gap-5 animate-fade-up animate-delay-200 items-start">
+      <div className="grid grid-cols-1 xl:grid-cols-[0.95fr_1.45fr] gap-4 animate-fade-up animate-delay-200 items-start">
         <Card className="overflow-hidden self-start">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -555,7 +567,7 @@ const Finance = () => {
               </div>
             </>
           ) : (
-            <div className="text-center py-12 muted-text text-sm">No expense data yet</div>
+            <div className="text-center py-8 muted-text text-sm">No expense data yet</div>
           )}
         </Card>
 
@@ -579,7 +591,7 @@ const Finance = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
             {[["Income records", incomes.length, "Tracked inflows", "text-emerald-300"],
               ["Expense records", expenses.length, "Tracked outflows", "text-rose-300"],
               ["Top category", topExpenseCategory?.name || "No data", "Largest expense slice", "text-amber-300"]].map(([label, value, sub, tone]) => (
@@ -593,7 +605,7 @@ const Finance = () => {
 
           <div className="grid gap-3 max-h-[36rem] overflow-y-auto pr-1">
             {displayed.length === 0 ? (
-              <div className="text-center py-12 muted-text text-sm">No transactions yet</div>
+              <div className="text-center py-8 muted-text text-sm">No transactions yet</div>
             ) : displayed.map((tx) => {
               const categoryInfo = tx.type === "income"
                 ? getIncomeSourceInfo(tx.source)
@@ -799,3 +811,4 @@ const Finance = () => {
 };
 
 export default Finance;
+

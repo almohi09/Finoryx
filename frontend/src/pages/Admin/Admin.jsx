@@ -95,7 +95,7 @@ const Admin = () => {
   ];
 
   return (
-    <div className="space-y-6 max-w-7xl">
+    <div className="space-y-4 max-w-7xl mx-auto w-full">
       <div className="animate-fade-up">
         <div className="flex items-center gap-2 mb-1">
           <h1 className="page-title">Admin Panel</h1>
@@ -137,7 +137,7 @@ const Admin = () => {
           <Card>
             <h3 className="section-title mb-4">Recent Signups</h3>
             {users.length === 0 ? (
-              <div className="text-center py-12 muted-text text-sm">No users found</div>
+              <div className="text-center py-8 muted-text text-sm">No users found</div>
             ) : (
               <div className="space-y-2">
                 {users.slice(0, 5).map((user) => (
@@ -223,7 +223,7 @@ const Admin = () => {
             <h3 className="section-title">User Feedback</h3>
           </div>
           {feedback.length === 0 ? (
-            <div className="text-center py-12 muted-text text-sm">No feedback submitted</div>
+            <div className="text-center py-8 muted-text text-sm">No feedback submitted</div>
           ) : (
             <div className="space-y-3">
               {feedback.map((fb, index) => (
@@ -335,3 +335,4 @@ const Admin = () => {
 };
 
 export default Admin;
+

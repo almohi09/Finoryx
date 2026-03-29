@@ -72,7 +72,7 @@ const NotificationPanel = ({ onClose }) => {
 
       <div className="max-h-[24rem] overflow-y-auto">
         {notifications.length === 0 ? (
-          <div className="px-4 py-10 text-center">
+          <div className="px-4 py-8 text-center">
             <div className="w-12 h-12 rounded-2xl mx-auto mb-3 flex items-center justify-center bg-white/5 text-amber-300">
               <Bell size={18} />
             </div>

@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import BrandLogo from "../branding/BrandLogo";
 import {
   LayoutDashboard, TrendingUp, Repeat2, Target,
   BarChart3, ShieldCheck, LogOut, Wallet, ChevronRight, Settings,
@@ -43,12 +44,8 @@ const Sidebar = ({ open, onClose }) => {
         style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
       >
         {/* Logo */}
-        <div className="px-5 pt-6 pb-5 flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center"
-            style={{ background: "var(--accent-gold)" }}>
-            <BarChart3 size={16} color="#0e0d09" strokeWidth={2.5} />
-          </div>
-          <span className="font-display font-800 text-lg tracking-tight">Finoryx</span>
+        <div className="px-5 pt-6 pb-5">
+          <BrandLogo size="sm" />
         </div>
 
         <div className="divider mx-4 my-0" />

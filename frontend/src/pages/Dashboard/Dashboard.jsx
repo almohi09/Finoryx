@@ -120,7 +120,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="space-y-6 max-w-7xl">
+    <div className="space-y-4 max-w-7xl mx-auto w-full">
       <div className="flex items-center justify-between animate-fade-up">
         <div>
           <h1 className="page-title">Dashboard</h1>
@@ -149,7 +149,7 @@ const Dashboard = () => {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 animate-fade-up animate-delay-300">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 animate-fade-up animate-delay-300">
         <Card className="lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-title">Wealth Growth</h3>
@@ -164,7 +164,7 @@ const Dashboard = () => {
             <Link to="/habits" className="text-xs gold-text hover:underline">View all</Link>
           </div>
           {habits.length === 0 ? (
-            <div className="text-center py-12 muted-text text-sm">No habits yet</div>
+            <div className="text-center py-8 muted-text text-sm">No habits yet</div>
           ) : (
             <div className="space-y-3">
               {habits.slice(0, 4).map((h) => (
@@ -181,7 +181,7 @@ const Dashboard = () => {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 animate-fade-up animate-delay-400">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 animate-fade-up animate-delay-400">
         <Card>
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-title">Recent Transactions</h3>
@@ -189,7 +189,7 @@ const Dashboard = () => {
           </div>
           <div className="space-y-2">
             {transactions.length === 0 ? (
-              <div className="text-center py-12 muted-text text-sm">No transactions yet</div>
+              <div className="text-center py-8 muted-text text-sm">No transactions yet</div>
             ) : transactions.slice(0, 5).map((tx, i) => {
               const cat = getCategoryInfo(tx.category);
               return (
@@ -215,7 +215,7 @@ const Dashboard = () => {
           </div>
           {goals.length === 0 ? (
             <>
-              <div className="text-center py-12 muted-text text-sm">
+              <div className="text-center py-8 muted-text text-sm">
                 Create a goal to see progress here
               </div>
               <div className="mt-4">
@@ -256,3 +256,4 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+

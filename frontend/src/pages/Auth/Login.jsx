@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Mail, Lock, Eye, EyeOff, Coins } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { authService } from "../../services/auth.service";
 import toast from "react-hot-toast";
 import Button from "../../components/ui/Button";
 import Input from "../../components/ui/Input";
 import { setStoredToken } from "../../utils/auth";
+import BrandLogo from "../../components/branding/BrandLogo";
 
 const Login = () => {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -49,12 +50,8 @@ const Login = () => {
         <div className="absolute inset-0 opacity-[0.03]"
           style={{ backgroundImage: "radial-gradient(circle at 2px 2px, #f59e0b 1px, transparent 0)", backgroundSize: "32px 32px" }} />
 
-        <div className="flex items-center gap-2.5 relative z-10">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-            style={{ background: "var(--accent-gold)" }}>
-            <Coins size={18} color="#0e0d09" strokeWidth={2.5} />
-          </div>
-          <span className="font-display font-800 text-xl tracking-tight">WealthWise</span>
+        <div className="relative z-10">
+          <BrandLogo size="md" />
         </div>
 
         <div className="relative z-10 space-y-8">
@@ -84,7 +81,7 @@ const Login = () => {
         </div>
 
         <p className="text-xs muted-text relative z-10">
-          (c) 2024 WealthWise. All rights reserved.
+          (c) 2026 Fynorix. All rights reserved.
         </p>
       </div>
 
@@ -92,11 +89,7 @@ const Login = () => {
         <div className="w-full max-w-md animate-fade-up">
           <div className="mb-8">
             <div className="flex items-center gap-2.5 mb-6 lg:hidden">
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center"
-                style={{ background: "var(--accent-gold)" }}>
-                <Coins size={15} color="#0e0d09" strokeWidth={2.5} />
-              </div>
-              <span className="font-display font-800 text-lg">WealthWise</span>
+              <BrandLogo size="sm" />
             </div>
             <h2 className="text-3xl font-display font-800 mb-1">Welcome back</h2>
             <p className="muted-text text-sm">Sign in to your account to continue</p>
@@ -153,3 +146,4 @@ const Login = () => {
 };
 
 export default Login;
+

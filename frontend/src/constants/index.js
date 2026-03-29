@@ -1,10 +1,5 @@
 const configuredApiUrl = import.meta.env.VITE_API_URL?.trim();
 
-const normalizeApiBaseUrl = (url) =>
-  url
-    .replace(/\/+(auth|finance|investments|dashboard|habits|goals|admin|feedback)(\/.*)?$/i, "")
-    .replace(/\/+$/, "");
-
 const buildApiConfig = () => {
   if (configuredApiUrl) {
     return {
@@ -12,7 +7,14 @@ const buildApiConfig = () => {
       error: "",
     };
   }
-}
+
+  if (typeof window !== "undefined") {
+    const fromOrigin = `${window.location.protocol}//${window.location.hostname}:5000/api`;
+    return { apiBaseUrl: fromOrigin, error: "" };
+  }
+
+  return { apiBaseUrl: "", error: "Missing VITE_API_URL configuration" };
+};
 
 const resolveApiBaseUrl = () => {
   const { apiBaseUrl, error } = buildApiConfig();

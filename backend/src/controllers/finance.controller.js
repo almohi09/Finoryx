@@ -353,7 +353,7 @@ const createPlaidLinkToken = async (req, res, next) => {
   try {
     const result = await createLinkToken({
       userId: req.user._id.toString(),
-      clientName: "Finoryx",
+      clientName: "Fynorix",
     });
 
     return res.status(200).json({

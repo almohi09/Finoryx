@@ -167,7 +167,7 @@ const Analytics = () => {
   ];
 
   return (
-    <div className="space-y-6 max-w-7xl">
+    <div className="space-y-4 max-w-7xl mx-auto w-full">
       <div className="animate-fade-up">
         <h1 className="page-title">Analytics</h1>
         <p className="muted-text text-sm mt-1">Deep dive into your financial performance</p>
@@ -188,7 +188,7 @@ const Analytics = () => {
         <NetWorthChart data={wealthData} />
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 animate-fade-up animate-delay-300">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 animate-fade-up animate-delay-300">
         <Card>
           <h3 className="section-title mb-4">Income vs Expenses</h3>
           <ResponsiveContainer width="100%" height={220}>
@@ -214,7 +214,7 @@ const Analytics = () => {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 animate-fade-up animate-delay-400">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 animate-fade-up animate-delay-400">
         <Card>
           <h3 className="section-title mb-4">Monthly Savings Trend</h3>
           <ResponsiveContainer width="100%" height={180}>
@@ -273,3 +273,4 @@ const Analytics = () => {
 };
 
 export default Analytics;
+

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus, Trash2, Pencil, TrendingUp, ArrowLeftRight } from "lucide-react";
+import { Plus, Trash2, Pencil, TrendingUp, ArrowLeftRight, Landmark, RefreshCw, ShieldAlert } from "lucide-react";
 import { investmentService } from "../../services/investment.service";
 import { formatCurrency, formatDate } from "../../utils/helpers";
 import { INVESTMENT_TYPES, TRADE_ASSET_TYPES, TRADE_SIDES } from "../../constants";
@@ -52,6 +52,10 @@ const Investments = () => {
   const [assetSuggestions, setAssetSuggestions] = useState([]);
   const [assetSearchOpen, setAssetSearchOpen] = useState(false);
   const [assetSearchLoading, setAssetSearchLoading] = useState(false);
+  const [brokerAccount, setBrokerAccount] = useState(null);
+  const [brokerPositions, setBrokerPositions] = useState([]);
+  const [brokerError, setBrokerError] = useState("");
+  const [brokerLoading, setBrokerLoading] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -71,8 +75,41 @@ const Investments = () => {
     }
   };
 
+  const fetchBrokerData = async () => {
+    setBrokerLoading(true);
+    try {
+      const [accountRes, positionsRes] = await Promise.allSettled([
+        investmentService.getBrokerAccount(),
+        investmentService.getBrokerPositions(),
+      ]);
+
+      if (accountRes.status === "fulfilled") {
+        setBrokerAccount(accountRes.value.data?.account || null);
+      } else {
+        setBrokerAccount(null);
+      }
+
+      if (positionsRes.status === "fulfilled") {
+        setBrokerPositions(positionsRes.value.data?.positions || []);
+      } else {
+        setBrokerPositions([]);
+      }
+
+      const accountMessage = accountRes.status === "rejected" ? accountRes.reason?.response?.data?.message || accountRes.reason?.message : "";
+      const positionMessage = positionsRes.status === "rejected" ? positionsRes.reason?.response?.data?.message || positionsRes.reason?.message : "";
+      setBrokerError(accountMessage || positionMessage || "");
+    } catch {
+      setBrokerAccount(null);
+      setBrokerPositions([]);
+      setBrokerError("Unable to reach Alpaca right now");
+    } finally {
+      setBrokerLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchData();
+    fetchBrokerData();
   }, []);
 
   useEffect(() => {
@@ -151,6 +188,9 @@ const Investments = () => {
   const handleAddTrade = async () => {
     if (!tradeForm.symbol.trim() || !tradeForm.assetName.trim()) return toast.error("Symbol and asset name are required");
     if (!tradeForm.quantity || !tradeForm.price) return toast.error("Quantity and price are required");
+    if (tradeForm.executeLive && (!brokerAccount || brokerError)) {
+      return toast.error("Live Alpaca execution is unavailable. Disable live execution or configure Alpaca.");
+    }
 
     setSaving(true);
     try {
@@ -189,6 +229,8 @@ const Investments = () => {
   const totalCurrent = investments.reduce((sum, item) => sum + (item.currentValue || item.amount || 0), 0);
   const totalGain = totalCurrent - totalInvested;
   const gainPct = totalInvested ? ((totalGain / totalInvested) * 100).toFixed(1) : 0;
+  const brokerBuyingPower = Number(brokerAccount?.buyingPower || 0);
+  const brokerEquity = Number(brokerAccount?.equity || 0);
 
   const byType = INVESTMENT_TYPES.map((type) => ({
     name: type.label,
@@ -196,7 +238,7 @@ const Investments = () => {
   })).filter((item) => item.value > 0);
 
   return (
-    <div className="space-y-6 max-w-7xl">
+    <div className="space-y-4 max-w-7xl mx-auto w-full">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 animate-fade-up">
         <div>
           <h1 className="page-title">Investments</h1>
@@ -225,7 +267,7 @@ const Investments = () => {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-5 animate-fade-up animate-delay-200 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-4 animate-fade-up animate-delay-200 items-start">
         <Card>
           <h3 className="section-title mb-4">Portfolio Mix</h3>
           {byType.length > 0 ? (
@@ -238,7 +280,7 @@ const Investments = () => {
               </PieChart>
             </ResponsiveContainer>
           ) : (
-            <div className="text-center py-10 muted-text text-sm">No investments yet</div>
+            <div className="text-center py-8 muted-text text-sm">No investments yet</div>
           )}
           <div className="space-y-1.5 mt-2">
             {byType.map((item, index) => (
@@ -262,7 +304,7 @@ const Investments = () => {
         <Card>
           <h3 className="section-title mb-4">Recent Trades</h3>
           {trades.length === 0 ? (
-            <div className="text-center py-10 muted-text text-sm">No trades recorded yet</div>
+            <div className="text-center py-8 muted-text text-sm">No trades recorded yet</div>
           ) : (
             <div className="grid gap-3 max-h-[22rem] overflow-y-auto pr-1">
               {trades.slice(0, 8).map((trade) => (
@@ -290,7 +332,7 @@ const Investments = () => {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 animate-fade-up animate-delay-300 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 animate-fade-up animate-delay-300 items-start">
         <div className="lg:col-span-2">
           <Card>
             <h3 className="section-title mb-4">All Investments</h3>
@@ -356,16 +398,46 @@ const Investments = () => {
         </div>
 
         <Card>
-          <h3 className="section-title mb-4">Trading Desk</h3>
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <h3 className="section-title">Trading Desk</h3>
+            <button
+              type="button"
+              onClick={fetchBrokerData}
+              className="p-2 rounded-xl border hover:bg-white/5 transition-colors"
+              style={{ borderColor: "var(--border)" }}
+              aria-label="Refresh broker data"
+            >
+              <RefreshCw size={13} className={brokerLoading ? "animate-spin" : ""} />
+            </button>
+          </div>
           <div className="space-y-3">
+            <div className="rounded-2xl border p-4" style={{ background: "var(--bg-secondary)", borderColor: brokerError ? "rgba(244,63,94,0.3)" : "var(--border)" }}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.16em] muted-text font-display font-600">Broker Connection</p>
+                  <p className="text-sm font-display font-700 mt-2">{brokerError ? "Alpaca unavailable" : "Alpaca connected"}</p>
+                  <p className="text-xs muted-text mt-1">
+                    {brokerError || (brokerAccount ? `Status: ${brokerAccount.status || "active"}` : "Checking broker status...")}
+                  </p>
+                </div>
+                <span className={`p-2 rounded-xl ${brokerError ? "bg-rose-500/10 text-rose-300" : "bg-sky-500/10 text-sky-300"}`}>
+                  {brokerError ? <ShieldAlert size={14} /> : <Landmark size={14} />}
+                </span>
+              </div>
+            </div>
             <div className="rounded-2xl border p-4" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
               <p className="text-xs uppercase tracking-[0.16em] muted-text font-display font-600">Executed orders</p>
               <div className="text-3xl font-display font-800 mt-3 text-sky-300">{trades.length}</div>
             </div>
             <div className="rounded-2xl border p-4" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
-              <p className="text-xs uppercase tracking-[0.16em] muted-text font-display font-600">Latest trade</p>
-              <p className="text-sm font-display font-700 mt-3">{trades[0] ? `${trades[0].side.toUpperCase()} ${trades[0].symbol}` : "No trades yet"}</p>
-              <p className="text-xs muted-text mt-2">{trades[0] ? formatDate(trades[0].executedAt) : "Record a trade to populate this card."}</p>
+              <p className="text-xs uppercase tracking-[0.16em] muted-text font-display font-600">Broker funds</p>
+              <p className="text-sm font-display font-700 mt-3">Buying Power: {formatCurrency(brokerBuyingPower)}</p>
+              <p className="text-xs muted-text mt-2">Equity: {formatCurrency(brokerEquity)}</p>
+            </div>
+            <div className="rounded-2xl border p-4" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
+              <p className="text-xs uppercase tracking-[0.16em] muted-text font-display font-600">Open positions</p>
+              <p className="text-sm font-display font-700 mt-3">{brokerPositions.length} active positions</p>
+              <p className="text-xs muted-text mt-2">{brokerPositions.slice(0, 3).map((item) => item.symbol).join(", ") || "No live positions reported."}</p>
             </div>
             <Button className="w-full" onClick={openTradeModal}>
               <ArrowLeftRight size={14} /> Record Trade
@@ -437,8 +509,18 @@ const Investments = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input label="Selected Symbol" value={tradeForm.symbol} readOnly />
-            <Input label="Selected Asset" value={tradeForm.assetName} readOnly />
+            <Input
+              label="Selected Symbol"
+              value={tradeForm.symbol}
+              placeholder="AAPL"
+              onChange={(e) => setTradeForm({ ...tradeForm, symbol: e.target.value.toUpperCase() })}
+            />
+            <Input
+              label="Selected Asset"
+              value={tradeForm.assetName}
+              placeholder="Apple Inc."
+              onChange={(e) => setTradeForm({ ...tradeForm, assetName: e.target.value })}
+            />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Select label="Asset Type" value={tradeForm.assetType} onChange={(e) => setTradeForm({ ...tradeForm, assetType: e.target.value })} options={TRADE_ASSET_TYPES} />
@@ -457,19 +539,27 @@ const Investments = () => {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input label="Trade Date" type="date" value={tradeForm.executedAt} onChange={(e) => setTradeForm({ ...tradeForm, executedAt: e.target.value })} />
-            <div className="rounded-xl border px-3 py-2.5 flex items-center justify-between" style={{ borderColor: "var(--border)" }}>
+            <div className="rounded-xl border px-3 py-2.5 flex items-center justify-between gap-3" style={{ borderColor: "var(--border)" }}>
               <div>
-                <p className="text-sm font-display font-700">Execute with broker</p>
-                <p className="text-xs muted-text mt-1">Sends order to Alpaca when enabled</p>
+                <label htmlFor="live-trade-toggle" className="text-sm font-display font-700 cursor-pointer">Execute with broker</label>
+                <p className="text-xs muted-text mt-1">
+                  {brokerError ? "Unavailable until Alpaca credentials are configured" : "Sends order to Alpaca when enabled"}
+                </p>
               </div>
               <input
+                id="live-trade-toggle"
                 type="checkbox"
                 checked={Boolean(tradeForm.executeLive)}
                 onChange={(e) => setTradeForm({ ...tradeForm, executeLive: e.target.checked })}
                 className="h-4 w-4"
+                disabled={Boolean(brokerError)}
+                aria-describedby="live-trade-help"
               />
             </div>
           </div>
+          <p id="live-trade-help" className="text-xs muted-text">
+            You can always record manual trades even when Alpaca is unavailable.
+          </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Input label="Quantity" type="number" placeholder="0" value={tradeForm.quantity} onChange={(e) => setTradeForm({ ...tradeForm, quantity: e.target.value })} />
             <Input label="Price" type="number" placeholder="0" value={tradeForm.price} onChange={(e) => setTradeForm({ ...tradeForm, price: e.target.value })} />
@@ -497,3 +587,4 @@ const Investments = () => {
 };
 
 export default Investments;
+
