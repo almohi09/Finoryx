@@ -250,7 +250,7 @@ const Investments = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3 animate-fade-up animate-delay-100 max-w-5xl">
+      <div className="grid grid-cols-3 lg:grid-cols-5 gap-4 animate-fade-up animate-delay-100">
         {[
           { label: "Total Invested", value: totalInvested, color: "text-blue-400" },
           { label: "Current Value", value: totalCurrent, color: "text-amber-400" },
@@ -492,7 +492,7 @@ const Investments = () => {
                 {assetSearchLoading ? (
                   <div className="px-3 py-2 text-xs muted-text">Searching assets...</div>
                 ) : assetSuggestions.length === 0 ? (
-                  <div className="px-3 py-2 text-xs muted-text">No matching assets</div>
+                  <div className="px-3 py-2 text-xs muted-text" >No matching assets</div>
                 ) : assetSuggestions.map((asset) => (
                   <button
                     type="button"
