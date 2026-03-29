@@ -238,7 +238,7 @@ const Investments = () => {
   })).filter((item) => item.value > 0);
 
   return (
-    <div className="space-y-4 max-w-7xl mx-auto w-full">
+    <div className="space-y-3 max-w-6xl mx-auto w-full">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 animate-fade-up">
         <div>
           <h1 className="page-title">Investments</h1>
@@ -250,7 +250,7 @@ const Investments = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4 animate-fade-up animate-delay-100">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3 animate-fade-up animate-delay-100 max-w-5xl">
         {[
           { label: "Total Invested", value: totalInvested, color: "text-blue-400" },
           { label: "Current Value", value: totalCurrent, color: "text-amber-400" },
@@ -260,7 +260,7 @@ const Investments = () => {
         ].map((item) => (
           <Card key={item.label}>
             <div className="muted-text text-xs mb-2">{item.label}</div>
-            <div className={`text-xl font-display font-800 ${item.color}`}>
+            <div className={`text-2xl font-display font-800 ${item.color}`}>
               {formatCurrency(item.value)}{item.suffix || ""}
             </div>
           </Card>
@@ -332,8 +332,8 @@ const Investments = () => {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 animate-fade-up animate-delay-300 items-start">
-        <div className="lg:col-span-2">
+      <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_0.9fr] gap-4 animate-fade-up animate-delay-300 items-start">
+        <div>
           <Card>
             <h3 className="section-title mb-4">All Investments</h3>
             {investments.length === 0 ? (
@@ -397,7 +397,7 @@ const Investments = () => {
           </Card>
         </div>
 
-        <Card>
+        <Card className="h-full">
           <div className="flex items-center justify-between gap-3 mb-4">
             <h3 className="section-title">Trading Desk</h3>
             <button
@@ -587,4 +587,5 @@ const Investments = () => {
 };
 
 export default Investments;
+
 

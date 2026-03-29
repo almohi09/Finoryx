@@ -9,8 +9,12 @@ const buildApiConfig = () => {
   }
 
   if (typeof window !== "undefined") {
-    const fromOrigin = `${window.location.protocol}//${window.location.hostname}:5000/api`;
-    return { apiBaseUrl: fromOrigin, error: "" };
+    const host = window.location.hostname;
+    const protocol = window.location.protocol;
+    const isLocalhost = host === "localhost" || host === "127.0.0.1";
+    const localApi = `${protocol}//${host}:3000/api`;
+    const sameOriginApi = `${window.location.origin}/api`;
+    return { apiBaseUrl: isLocalhost ? localApi : sameOriginApi, error: "" };
   }
 
   return { apiBaseUrl: "", error: "Missing VITE_API_URL configuration" };

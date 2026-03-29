@@ -124,7 +124,7 @@ const Habits = () => {
   const weeklyChart = buildWeeklyChart(habits);
 
   return (
-    <div className="space-y-4 max-w-7xl mx-auto w-full">
+    <div className="space-y-4 max-w-6xl mx-auto w-full">
       <div className="flex items-center justify-between animate-fade-up">
         <div>
           <h1 className="page-title">Habit Tracker</h1>
@@ -257,4 +257,5 @@ const Habits = () => {
 };
 
 export default Habits;
+
 

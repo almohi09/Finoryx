@@ -108,7 +108,7 @@ const Goals = () => {
   const completedGoals = goals.filter((g) => g.currentAmount >= g.targetAmount).length;
 
   return (
-    <div className="space-y-4 max-w-7xl mx-auto w-full">
+    <div className="space-y-4 max-w-6xl mx-auto w-full">
       <div className="flex items-center justify-between animate-fade-up">
         <div>
           <h1 className="page-title">Savings Goals</h1>
@@ -236,4 +236,5 @@ const Goals = () => {
 };
 
 export default Goals;
+
 

@@ -167,7 +167,7 @@ const Analytics = () => {
   ];
 
   return (
-    <div className="space-y-4 max-w-7xl mx-auto w-full">
+    <div className="space-y-4 max-w-6xl mx-auto w-full">
       <div className="animate-fade-up">
         <h1 className="page-title">Analytics</h1>
         <p className="muted-text text-sm mt-1">Deep dive into your financial performance</p>
@@ -273,4 +273,5 @@ const Analytics = () => {
 };
 
 export default Analytics;
+
 

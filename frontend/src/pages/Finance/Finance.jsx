@@ -321,7 +321,7 @@ const Finance = () => {
   const topExpenseCategory = categoryData.slice().sort((a, b) => b.value - a.value)[0] || null;
 
   return (
-    <div className="space-y-4 max-w-7xl mx-auto w-full">
+    <div className="space-y-4 max-w-6xl mx-auto w-full">
       <div className="grid grid-cols-1 xl:grid-cols-[1.35fr_0.9fr] gap-4 animate-fade-up items-start">
         <Card className="relative overflow-hidden p-0">
           <div
@@ -811,4 +811,5 @@ const Finance = () => {
 };
 
 export default Finance;
+
 

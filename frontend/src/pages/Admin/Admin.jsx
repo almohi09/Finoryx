@@ -95,7 +95,7 @@ const Admin = () => {
   ];
 
   return (
-    <div className="space-y-4 max-w-7xl mx-auto w-full">
+    <div className="space-y-4 max-w-6xl mx-auto w-full">
       <div className="animate-fade-up">
         <div className="flex items-center gap-2 mb-1">
           <h1 className="page-title">Admin Panel</h1>
@@ -335,4 +335,5 @@ const Admin = () => {
 };
 
 export default Admin;
+
 
