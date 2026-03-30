@@ -81,7 +81,7 @@ const Login = () => {
         </div>
 
         <p className="text-xs muted-text relative z-10">
-          (c) 2026 Fynorix. All rights reserved.
+          (c) 2026 Fynvester. All rights reserved.
         </p>
       </div>
 

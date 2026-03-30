@@ -1,5 +1,13 @@
 import api from "./api";
 
+const ADVISOR_CACHE_TTL_MS = 30000;
+const advisorCache = new Map();
+
+const cacheKey = (params = {}) => JSON.stringify({
+  scope: params.scope || "overall",
+  question: params.question || "",
+});
+
 export const financeService = {
   // Income
   getIncomes: (params) => api.get("/finance/income", { params }),
@@ -27,5 +35,26 @@ export const financeService = {
   getBankTransactions: () => api.get("/finance/bank-transactions"),
 
   // Advisor
-  getAdvisorInsights: () => api.get("/finance/advisor"),
+  getAdvisorHealth: () => api.get("/finance/advisor/health"),
+  getAdvisorInsights: async (params = {}) => {
+    const key = cacheKey(params);
+    const existing = advisorCache.get(key);
+    if (existing && Date.now() - existing.at < ADVISOR_CACHE_TTL_MS) {
+      return { data: existing.data };
+    }
+
+    const response = await api.get("/finance/advisor", { params });
+    if (response.data?.metadata?.source && response.data.metadata.source !== "rules") {
+      advisorCache.set(key, { at: Date.now(), data: response.data });
+    }
+    return response;
+  },
+  queryAdvisor: async (data = {}) => {
+    const response = await api.post("/finance/advisor/query", data);
+    const key = cacheKey({ scope: data.scope, question: data.question || "" });
+    if (response.data?.metadata?.source && response.data.metadata.source !== "rules") {
+      advisorCache.set(key, { at: Date.now(), data: response.data });
+    }
+    return response;
+  },
 };

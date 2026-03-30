@@ -2,21 +2,71 @@ const Habit = require("../models/habit.model");
 
 const isSameDay = (day1, day2) => new Date(day1).toDateString() === new Date(day2).toDateString();
 
-const isNextDay = (lastDay, today) => {
-  const oneDay = 24 * 60 * 60 * 1000;
-  const difference =
-    new Date(today).setHours(0, 0, 0, 0) - new Date(lastDay).setHours(0, 0, 0, 0);
-  return difference === oneDay;
+const getPeriodStart = (date, frequency = "daily") => {
+  const value = new Date(date);
+  value.setHours(0, 0, 0, 0);
+
+  if (frequency === "weekly") {
+    const day = value.getDay();
+    const mondayOffset = (day + 6) % 7;
+    value.setDate(value.getDate() - mondayOffset);
+    return value;
+  }
+
+  if (frequency === "monthly") {
+    value.setDate(1);
+    return value;
+  }
+
+  return value;
+};
+
+const addPeriod = (date, frequency = "daily", amount = 1) => {
+  const next = new Date(date);
+  if (frequency === "weekly") {
+    next.setDate(next.getDate() + (7 * amount));
+    return next;
+  }
+  if (frequency === "monthly") {
+    next.setMonth(next.getMonth() + amount);
+    return next;
+  }
+  next.setDate(next.getDate() + amount);
+  return next;
+};
+
+const isSamePeriod = (lastDay, today, frequency = "daily") => {
+  const lastStart = getPeriodStart(lastDay, frequency).getTime();
+  const todayStart = getPeriodStart(today, frequency).getTime();
+  return lastStart === todayStart;
+};
+
+const isNextPeriod = (lastDay, today, frequency = "daily") => {
+  const lastStart = getPeriodStart(lastDay, frequency);
+  const todayStart = getPeriodStart(today, frequency).getTime();
+  return addPeriod(lastStart, frequency, 1).getTime() === todayStart;
+};
+
+const shouldResetStreak = (lastDay, today, frequency = "daily") => {
+  if (!lastDay) return false;
+  const lastStart = getPeriodStart(lastDay, frequency);
+  const expectedCurrentOrPrevious = addPeriod(lastStart, frequency, 1).getTime();
+  const todayStart = getPeriodStart(today, frequency).getTime();
+  return expectedCurrentOrPrevious < todayStart;
 };
 
 const toHabitResponse = (habit) => {
   const today = new Date();
   const lastCompleted = habit.completedDates?.[habit.completedDates.length - 1];
+  const effectiveStreak = shouldResetStreak(lastCompleted, today, habit.frequency)
+    ? 0
+    : (habit.streak || 0);
 
   return {
     ...habit.toObject(),
+    streak: effectiveStreak,
     description: habit.notes || "",
-    completedToday: lastCompleted ? isSameDay(lastCompleted, today) : false,
+    completedToday: lastCompleted ? isSamePeriod(lastCompleted, today, habit.frequency) : false,
     totalCompletions: habit.completedDates?.length || 0,
   };
 };
@@ -84,11 +134,11 @@ const completeHabit = async (req, res, next) => {
       ? habit.completedDates[habit.completedDates.length - 1]
       : null;
 
-    if (lastCompleted && isSameDay(lastCompleted, today)) {
-      return res.status(400).json({ message: "Already completed today" });
+    if (lastCompleted && isSamePeriod(lastCompleted, today, habit.frequency)) {
+      return res.status(400).json({ message: `Already completed for this ${habit.frequency} period` });
     }
 
-    habit.streak = lastCompleted && isNextDay(lastCompleted, today) ? habit.streak + 1 : 1;
+    habit.streak = lastCompleted && isNextPeriod(lastCompleted, today, habit.frequency) ? habit.streak + 1 : 1;
     habit.lastCompleted = today;
     habit.completedDates.push(today);
 

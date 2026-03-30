@@ -2,11 +2,21 @@ import { EXPENSE_CATEGORIES } from "../constants";
 
 export const formatCurrency = (amount, currency = "Rs ") => {
   if (amount === null || amount === undefined) return `${currency}0`;
-  const num = parseFloat(amount);
-  if (num >= 10000000) return `${currency}${(num / 10000000).toFixed(2)}Cr`;
-  if (num >= 100000) return `${currency}${(num / 100000).toFixed(2)}L`;
-  if (num >= 1000) return `${currency}${(num / 1000).toFixed(1)}K`;
-  return `${currency}${num.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+  const num = Number(amount);
+  if (Number.isNaN(num)) return `${currency}0`;
+  const absValue = Math.abs(num);
+
+  if (absValue >= 1000) {
+    const compact = new Intl.NumberFormat("en-US", {
+      notation: "compact",
+      compactDisplay: "short",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    }).format(num);
+    return `${currency}${compact}`;
+  }
+
+  return `${currency}${num.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 };
 
 export const formatDate = (date) => {

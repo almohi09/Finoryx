@@ -1,15 +1,20 @@
 import { useEffect, useRef, useState } from "react";
-import { Menu, Bell, MessageSquare } from "lucide-react";
+import { useLocation } from "react-router-dom";
+import { Menu, Bell, MessageSquare, BrainCircuit } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useNotifications } from "../../context/NotificationsContext";
 import { getGreeting } from "../../utils/helpers";
 import NotificationPanel from "./NotificationPanel";
+import AdvisorPanel from "./AdvisorPanel";
 
 const Navbar = ({ onMenuToggle, onFeedbackClick }) => {
   const { user } = useAuth();
   const { unreadCount } = useNotifications();
+  const location = useLocation();
   const isAdmin = user?.role === "admin";
+  const [advisorOpen, setAdvisorOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const advisorRef = useRef(null);
   const notificationsRef = useRef(null);
 
   useEffect(() => {
@@ -17,16 +22,50 @@ const Navbar = ({ onMenuToggle, onFeedbackClick }) => {
       if (!notificationsRef.current?.contains(event.target)) {
         setNotificationsOpen(false);
       }
+      if (!advisorRef.current?.contains(event.target)) {
+        setAdvisorOpen(false);
+      }
     };
 
-    if (notificationsOpen) {
+    if (notificationsOpen || advisorOpen) {
       document.addEventListener("mousedown", handlePointerDown);
     }
 
     return () => {
       document.removeEventListener("mousedown", handlePointerDown);
     };
-  }, [notificationsOpen]);
+  }, [notificationsOpen, advisorOpen]);
+
+  const deriveAdvisorScope = (pathname = "") => {
+    const segments = pathname
+      .split("/")
+      .map((item) => String(item || "").trim().toLowerCase())
+      .filter(Boolean);
+
+    const aliases = {
+      investment: "investments",
+      investments: "investments",
+      goal: "goals",
+      goals: "goals",
+      habit: "habits",
+      habits: "habits",
+      analytic: "analytics",
+      analytics: "analytics",
+      finance: "finance",
+      dashboard: "dashboard",
+      account: "account",
+    };
+
+    for (const segment of segments) {
+      if (aliases[segment]) {
+        return aliases[segment];
+      }
+    }
+
+    return "overall";
+  };
+
+  const advisorScope = deriveAdvisorScope(location.pathname);
 
   return (
     <header
@@ -51,6 +90,19 @@ const Navbar = ({ onMenuToggle, onFeedbackClick }) => {
       </div>
 
       <div className="flex items-center gap-2">
+        <div className="relative" ref={advisorRef}>
+          <button
+            onClick={() => {
+              setAdvisorOpen((open) => !open);
+              setNotificationsOpen(false);
+            }}
+            className={`p-2 rounded-xl transition-colors muted-text hover:text-white ${advisorOpen ? "bg-white/10 text-white" : "hover:bg-white/5"}`}
+            title={`Open ${advisorScope} advisor`}
+          >
+            <BrainCircuit size={16} />
+          </button>
+          {advisorOpen ? <AdvisorPanel scope={advisorScope} onClose={() => setAdvisorOpen(false)} /> : null}
+        </div>
         {!isAdmin && (
           <button
             onClick={onFeedbackClick}
@@ -62,7 +114,10 @@ const Navbar = ({ onMenuToggle, onFeedbackClick }) => {
         )}
         <div className="relative" ref={notificationsRef}>
           <button
-            onClick={() => setNotificationsOpen((open) => !open)}
+            onClick={() => {
+              setNotificationsOpen((open) => !open);
+              setAdvisorOpen(false);
+            }}
             className="p-2 rounded-xl hover:bg-white/5 transition-colors muted-text hover:text-white relative"
             title="Open notifications"
           >

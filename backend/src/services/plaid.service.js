@@ -30,7 +30,7 @@ const plaidRequest = async (path, body = {}) => {
   return response.data;
 };
 
-const createLinkToken = async ({ userId, clientName = "Fynorix" }) => {
+const createLinkToken = async ({ userId, clientName = "Fynvester" }) => {
   const products = integrationConfig.plaid.products.length ? integrationConfig.plaid.products : ["transactions"];
   const body = {
     client_name: clientName,

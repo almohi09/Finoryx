@@ -1,4 +1,4 @@
-# Fynorix Frontend
+# Fynvester Frontend
 
 ## Local development
 

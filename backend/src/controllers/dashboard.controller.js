@@ -2,21 +2,48 @@ const mongoose = require("mongoose");
 const Income = require("../models/income.model");
 const Expense = require("../models/expense.model");
 const Investment = require("../models/investment.model");
+const TradeOrder = require("../models/tradeOrder.model");
 const Habit = require("../models/habit.model");
+
+const tradeCashFlowProjection = [
+  {
+    $project: {
+      effectiveQty: { $cond: [{ $gt: ["$filledQty", 0] }, "$filledQty", "$quantity"] },
+      effectivePrice: { $cond: [{ $gt: ["$filledAvgPrice", 0] }, "$filledAvgPrice", "$price"] },
+      fees: "$fees",
+      side: "$side",
+      executedAt: "$executedAt",
+      tradeCashFlow: {
+        $cond: [
+          { $eq: ["$side", "buy"] },
+          { $add: [{ $multiply: [{ $cond: [{ $gt: ["$filledQty", 0] }, "$filledQty", "$quantity"] }, { $cond: [{ $gt: ["$filledAvgPrice", 0] }, "$filledAvgPrice", "$price"] }] }, "$fees"] },
+          { $multiply: [-1, { $subtract: [{ $multiply: [{ $cond: [{ $gt: ["$filledQty", 0] }, "$filledQty", "$quantity"] }, { $cond: [{ $gt: ["$filledAvgPrice", 0] }, "$filledAvgPrice", "$price"] }] }, "$fees"] }] },
+        ],
+      },
+    },
+  },
+];
 
 const getSummary = async (req, res, next) => {
   try {
     const userId = new mongoose.Types.ObjectId(req.user._id);
 
-    const [income, expense, investment] = await Promise.all([
+    const [income, expense, investment, tradeTotals] = await Promise.all([
       Income.aggregate([{ $match: { userId } }, { $group: { _id: null, total: { $sum: "$amount" } } }]),
       Expense.aggregate([{ $match: { userId } }, { $group: { _id: null, total: { $sum: "$amount" } } }]),
       Investment.aggregate([{ $match: { userId } }, { $group: { _id: null, total: { $sum: "$currentValue" } } }]),
+      TradeOrder.aggregate([
+        { $match: { userId } },
+        ...tradeCashFlowProjection,
+        { $group: { _id: null, tradeNetInvested: { $sum: "$tradeCashFlow" } } },
+      ]),
     ]);
 
     const totalIncome = income[0]?.total || 0;
     const totalExpense = expense[0]?.total || 0;
-    const totalInvestments = investment[0]?.total || 0;
+    const manualInvestments = investment[0]?.total || 0;
+    const tradeNetInvested = tradeTotals[0]?.tradeNetInvested || 0;
+    const totalInvestments = manualInvestments + tradeNetInvested;
     const totalSavings = totalIncome - totalExpense;
 
     res.status(200).json({
@@ -39,7 +66,7 @@ const getWealthGrowth = async (req, res, next) => {
     const start = new Date(now.getFullYear(), now.getMonth() - (months - 1), 1);
     const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
 
-    const [openingIncome, openingExpense, incomeData, expenseData, investments] = await Promise.all([
+    const [openingIncome, openingExpense, incomeData, expenseData, investments, openingTrade, monthlyTrade] = await Promise.all([
       Income.aggregate([
         { $match: { userId, date: { $lt: start } } },
         { $group: { _id: null, total: { $sum: "$amount" } } },
@@ -68,6 +95,21 @@ const getWealthGrowth = async (req, res, next) => {
       ]),
       Investment.find({ userId, dateOfInvestment: { $lte: end } })
         .select("dateOfInvestment currentValue amountInvested"),
+      TradeOrder.aggregate([
+        { $match: { userId, executedAt: { $lt: start } } },
+        ...tradeCashFlowProjection,
+        { $group: { _id: null, tradeNetInvested: { $sum: "$tradeCashFlow" } } },
+      ]),
+      TradeOrder.aggregate([
+        { $match: { userId, executedAt: { $gte: start, $lte: end } } },
+        ...tradeCashFlowProjection,
+        {
+          $group: {
+            _id: { year: { $year: "$executedAt" }, month: { $month: "$executedAt" } },
+            tradeNetInvested: { $sum: "$tradeCashFlow" },
+          },
+        },
+      ]),
     ]);
 
     const byKey = new Map();
@@ -76,7 +118,14 @@ const getWealthGrowth = async (req, res, next) => {
       byKey.set(key, { ...(byKey.get(key) || {}), ...item });
     });
 
+    const tradeByKey = new Map();
+    monthlyTrade.forEach((item) => {
+      const key = `${item._id.year}-${item._id.month}`;
+      tradeByKey.set(key, item.tradeNetInvested || 0);
+    });
+
     let savingsBalance = (openingIncome[0]?.total || 0) - (openingExpense[0]?.total || 0);
+    let tradeInvestedBalance = openingTrade[0]?.tradeNetInvested || 0;
 
     const wealthGrowth = Array.from({ length: months }, (_, index) => {
       const date = new Date(now.getFullYear(), now.getMonth() - (months - 1) + index, 1);
@@ -87,6 +136,8 @@ const getWealthGrowth = async (req, res, next) => {
       const expense = bucket.expense || 0;
       const monthlySavings = income - expense;
       savingsBalance += monthlySavings;
+      const monthlyTradeNetInvested = tradeByKey.get(key) || 0;
+      tradeInvestedBalance += monthlyTradeNetInvested;
       const investmentValue = investments.reduce(
         (sum, investment) => (
           new Date(investment.dateOfInvestment) <= monthEnd
@@ -95,15 +146,18 @@ const getWealthGrowth = async (req, res, next) => {
         ),
         0
       );
+      const combinedInvestmentValue = investmentValue + tradeInvestedBalance;
 
       return {
+        monthKey: key,
         month: date.toLocaleDateString("en-US", { month: "short" }),
         income,
         expenses: expense,
         monthlySavings,
         savings: savingsBalance,
-        investments: investmentValue,
-        netWorth: savingsBalance + investmentValue,
+        investments: combinedInvestmentValue,
+        tradeNetInvested: monthlyTradeNetInvested,
+        netWorth: savingsBalance + combinedInvestmentValue,
       };
     });
 

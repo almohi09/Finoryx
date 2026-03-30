@@ -19,6 +19,7 @@ const {
   syncBankAccount,
   getBankTransactions,
   getAdvisorInsights,
+  getAdvisorHealth,
 } = require("../controllers/finance.controller");
 
 const financeRouter = express.Router();
@@ -58,6 +59,8 @@ financeRouter.get("/bank-accounts", authUser, getBankAccounts);
 financeRouter.post("/bank-accounts", authUser, validateBankAccount, addBankAccount);
 financeRouter.post("/bank-accounts/:id/sync", authUser, syncBankAccount);
 financeRouter.get("/bank-transactions", authUser, getBankTransactions);
+financeRouter.get("/advisor/health", authUser, getAdvisorHealth);
 financeRouter.get("/advisor", authUser, getAdvisorInsights);
+financeRouter.post("/advisor/query", authUser, getAdvisorInsights);
 
 module.exports = financeRouter;

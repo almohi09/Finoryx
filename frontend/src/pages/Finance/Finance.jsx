@@ -10,7 +10,6 @@ import {
   CalendarDays,
   Landmark,
   RefreshCw,
-  BrainCircuit,
 } from "lucide-react";
 import { financeService } from "../../services/finance.service";
 import {
@@ -31,6 +30,10 @@ import toast from "react-hot-toast";
 
 const tabs = ["All", "Income", "Expenses"];
 const today = () => new Date().toISOString().split("T")[0];
+const asNumber = (value) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
 
 const overviewCards = [
   { key: "income", label: "Income Flow", icon: ArrowUpRight, accent: "text-emerald-300", surface: "from-emerald-500/18 via-emerald-500/6 to-transparent" },
@@ -72,7 +75,6 @@ const Finance = () => {
   const [expenses, setExpenses] = useState([]);
   const [bankAccounts, setBankAccounts] = useState([]);
   const [bankTransactions, setBankTransactions] = useState([]);
-  const [advisorData, setAdvisorData] = useState({ insights: [], summary: {} });
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [showBankModal, setShowBankModal] = useState(false);
   const [modalType, setModalType] = useState("expense");
@@ -115,25 +117,22 @@ const Finance = () => {
 
   const fetchData = async () => {
     try {
-      const [incRes, expRes, accountRes, txRes, advisorRes] = await Promise.allSettled([
+      const [incRes, expRes, accountRes, txRes] = await Promise.allSettled([
         financeService.getIncomes(),
         financeService.getExpenses(),
         financeService.getBankAccounts(),
         financeService.getBankTransactions(),
-        financeService.getAdvisorInsights(),
       ]);
 
       setIncomes(incRes.status === "fulfilled" ? incRes.value.data?.incomes || [] : []);
       setExpenses(expRes.status === "fulfilled" ? expRes.value.data?.expenses || [] : []);
       setBankAccounts(accountRes.status === "fulfilled" ? accountRes.value.data?.accounts || [] : []);
       setBankTransactions(txRes.status === "fulfilled" ? txRes.value.data?.transactions || [] : []);
-      setAdvisorData(advisorRes.status === "fulfilled" ? advisorRes.value.data || { insights: [], summary: {} } : { insights: [], summary: {} });
     } catch {
       setIncomes([]);
       setExpenses([]);
       setBankAccounts([]);
       setBankTransactions([]);
-      setAdvisorData({ insights: [], summary: {} });
     }
   };
 
@@ -308,13 +307,13 @@ const Finance = () => {
       ? allTx.filter((tx) => tx.type === "income")
       : allTx.filter((tx) => tx.type === "expense");
 
-  const totalIncome = incomes.reduce((sum, item) => sum + (item.amount || 0), 0);
-  const totalExpense = expenses.reduce((sum, item) => sum + (item.amount || 0), 0);
+  const totalIncome = incomes.reduce((sum, item) => sum + asNumber(item.amount), 0);
+  const totalExpense = expenses.reduce((sum, item) => sum + asNumber(item.amount), 0);
   const balance = totalIncome - totalExpense;
-  const linkedBalance = bankAccounts.reduce((sum, item) => sum + (item.balance || 0), 0);
+  const linkedBalance = bankAccounts.reduce((sum, item) => sum + asNumber(item.balance), 0);
   const categoryData = EXPENSE_CATEGORIES.map((cat) => ({
     name: cat.label,
-    value: expenses.filter((item) => item.category === cat.value).reduce((sum, item) => sum + (item.amount || 0), 0),
+    value: expenses.filter((item) => item.category === cat.value).reduce((sum, item) => sum + asNumber(item.amount), 0),
   })).filter((item) => item.value > 0);
   const summaryValues = { income: totalIncome, expense: totalExpense, balance, linkedBalance };
   const savingsRate = totalIncome > 0 ? Math.max(0, Math.round((balance / totalIncome) * 100)) : 0;
@@ -384,36 +383,35 @@ const Finance = () => {
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-[0.18em] muted-text font-display font-600">This month</p>
-              <h3 className="section-title mt-2">Advisor snapshot</h3>
+              <h3 className="section-title mt-2">Finance pulse</h3>
             </div>
-            <span className="p-2 rounded-xl bg-white/5 text-sky-300">
-              <BrainCircuit size={15} />
-            </span>
+            <span className="badge-gold">{savingsRate}% saved</span>
           </div>
 
           <div className="space-y-3 mt-4">
-            {(advisorData.insights || []).slice(0, 3).map((insight) => {
-              const toneClass = insight.tone === "warning"
-                ? "border-rose-500/20 bg-rose-500/8"
-                : insight.tone === "positive"
-                  ? "border-emerald-500/20 bg-emerald-500/8"
-                  : "border-sky-500/20 bg-sky-500/8";
-
-              return (
-                <div key={insight.id} className={`rounded-2xl p-4 border ${toneClass}`}>
-                  <p className="text-sm font-display font-700">{insight.title}</p>
-                  <p className="text-xs muted-text mt-2 leading-5">{insight.summary}</p>
-                  <p className="text-xs mt-2 text-white/80 leading-5">{insight.action}</p>
-                </div>
-              );
-            })}
-
-            {advisorData.insights?.length === 0 ? (
-              <div className="rounded-2xl p-4 border" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
-                <p className="text-sm font-display font-700">No advisor signals yet</p>
-                <p className="text-xs muted-text mt-2">Add transactions and link an account to generate recommendations.</p>
-              </div>
-            ) : null}
+            <div className="rounded-2xl p-4 border" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
+              <p className="text-xs uppercase tracking-[0.14em] muted-text">Tracked cash flow</p>
+              <p className={`text-xl font-display font-800 mt-2 ${balance >= 0 ? "text-emerald-300" : "text-rose-300"}`}>
+                {formatCurrency(balance)}
+              </p>
+              <p className="text-xs muted-text mt-2">
+                Income {formatCurrency(totalIncome)} vs expense {formatCurrency(totalExpense)}
+              </p>
+            </div>
+            <div className="rounded-2xl p-4 border" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
+              <p className="text-xs uppercase tracking-[0.14em] muted-text">Top expense category</p>
+              <p className="text-base font-display font-700 mt-2">{topExpenseCategory?.name || "No data yet"}</p>
+              <p className="text-xs muted-text mt-2">
+                {topExpenseCategory ? `${formatCurrency(topExpenseCategory.value)} spent in this category.` : "Add expenses to detect your top category."}
+              </p>
+            </div>
+            <div className="rounded-2xl p-4 border" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
+              <p className="text-xs uppercase tracking-[0.14em] muted-text">Bank sync context</p>
+              <p className="text-base font-display font-700 mt-2">{bankTransactions.length} synced transactions</p>
+              <p className="text-xs muted-text mt-2">
+                Linked balance currently at {formatCurrency(linkedBalance)} across {bankAccounts.length} account{bankAccounts.length !== 1 ? "s" : ""}.
+              </p>
+            </div>
           </div>
         </Card>
       </div>
@@ -423,19 +421,19 @@ const Finance = () => {
           <p className="text-xs uppercase tracking-[0.18em] muted-text font-display font-600">Actions</p>
           <p className="muted-text text-sm mt-1">Capture manual records fast, then connect accounts for automatic tracking.</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="ghost" size="sm" className="min-w-[9rem]" onClick={() => openAdd("expense")}>
+        <div className="flex gap-3">
+          <Button variant="ghost" size="sm" className="min-w-[5rem]" onClick={() => openAdd("expense")}>
             <Plus size={13} /> Add Expense
           </Button>
-          <Button variant="ghost" size="sm" className="min-w-[9rem]" onClick={() => openAdd("income")}>
+          <Button variant="ghost" size="sm" className="min-w-[5rem]" onClick={() => openAdd("income")}>
             <Plus size={13} /> Add Income
           </Button>
-          <Button variant="ghost" size="sm" className="min-w-[11rem]" loading={linkingPlaid} onClick={handlePlaidConnect}>
+          <Button variant="ghost" size="sm" className="min-w-[7rem]" loading={linkingPlaid} onClick={handlePlaidConnect}>
             <Landmark size={13} /> Connect Plaid
           </Button>
           <Button
             size="sm"
-            className="min-w-[10rem]"
+            className="min-w-[7rem]"
             onClick={() => {
               setInstitutionQuery(bankForm.institutionName || "");
               setInstitutionSearchOpen(false);
@@ -811,5 +809,3 @@ const Finance = () => {
 };
 
 export default Finance;
-
-

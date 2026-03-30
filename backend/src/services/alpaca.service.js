@@ -44,6 +44,12 @@ const getPositions = async () => {
   return Array.isArray(response.data) ? response.data : [];
 };
 
+const getOrderById = async (orderId) => {
+  const client = getTradingClient();
+  const response = await client.get(`/v2/orders/${orderId}`);
+  return response.data;
+};
+
 const submitOrder = async ({
   symbol,
   side,
@@ -143,6 +149,7 @@ const searchAssets = async (query, limit = 15) => {
 module.exports = {
   getAccount,
   getPositions,
+  getOrderById,
   submitOrder,
   searchAssets,
 };

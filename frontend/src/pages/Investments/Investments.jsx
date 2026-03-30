@@ -38,6 +38,19 @@ const defaultTradeForm = {
   notes: "",
 };
 
+const asNumber = (value, fallback = 0) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const getCurrentValue = (investment) => {
+  const amount = asNumber(investment?.amount, 0);
+  if (investment?.currentValue === null || investment?.currentValue === undefined || investment?.currentValue === "") {
+    return amount;
+  }
+  return asNumber(investment.currentValue, amount);
+};
+
 const Investments = () => {
   const [investments, setInvestments] = useState([]);
   const [trades, setTrades] = useState([]);
@@ -146,12 +159,15 @@ const Investments = () => {
   };
 
   const openEdit = (investment) => {
+    const normalizedAmount = asNumber(investment.amount, 0);
+    const normalizedCurrentValue = getCurrentValue(investment);
+
     setEditItem(investment);
     setForm({
       name: investment.name,
       type: investment.type,
-      amount: investment.amount,
-      currentValue: investment.currentValue || investment.amount,
+      amount: normalizedAmount,
+      currentValue: normalizedCurrentValue,
       purchaseDate: investment.purchaseDate?.split("T")[0] || "",
       notes: investment.notes || "",
     });
@@ -187,7 +203,8 @@ const Investments = () => {
 
   const handleAddTrade = async () => {
     if (!tradeForm.symbol.trim() || !tradeForm.assetName.trim()) return toast.error("Symbol and asset name are required");
-    if (!tradeForm.quantity || !tradeForm.price) return toast.error("Quantity and price are required");
+    if (!tradeForm.quantity) return toast.error("Quantity is required");
+    if (!tradeForm.executeLive && !tradeForm.price) return toast.error("Price is required for manual trades");
     if (tradeForm.executeLive && (!brokerAccount || brokerError)) {
       return toast.error("Live Alpaca execution is unavailable. Disable live execution or configure Alpaca.");
     }
@@ -225,8 +242,8 @@ const Investments = () => {
     setAssetSearchOpen(false);
   };
 
-  const totalInvested = investments.reduce((sum, item) => sum + (item.amount || 0), 0);
-  const totalCurrent = investments.reduce((sum, item) => sum + (item.currentValue || item.amount || 0), 0);
+  const totalInvested = investments.reduce((sum, item) => sum + asNumber(item.amount, 0), 0);
+  const totalCurrent = investments.reduce((sum, item) => sum + getCurrentValue(item), 0);
   const totalGain = totalCurrent - totalInvested;
   const gainPct = totalInvested ? ((totalGain / totalInvested) * 100).toFixed(1) : 0;
   const brokerBuyingPower = Number(brokerAccount?.buyingPower || 0);
@@ -234,7 +251,7 @@ const Investments = () => {
 
   const byType = INVESTMENT_TYPES.map((type) => ({
     name: type.label,
-    value: investments.filter((item) => item.type === type.value).reduce((sum, item) => sum + (item.currentValue || item.amount || 0), 0),
+    value: investments.filter((item) => item.type === type.value).reduce((sum, item) => sum + getCurrentValue(item), 0),
   })).filter((item) => item.value > 0);
 
   return (
@@ -316,11 +333,13 @@ const Investments = () => {
                         <span className="text-xs muted-text">{trade.symbol}</span>
                       </div>
                       <p className="text-sm font-display font-700 mt-3">{trade.assetName}</p>
-                      <p className="text-xs muted-text mt-1">{formatDate(trade.executedAt)} | {trade.quantity} units at {formatCurrency(trade.price)}</p>
+                      <p className="text-xs muted-text mt-1">
+                        {formatDate(trade.executedAt)} | {trade.executionQuantity || trade.quantity} units at {formatCurrency(trade.executionPrice || trade.price)}
+                      </p>
                     </div>
                     <div className="text-right">
-                      <div className={`text-lg font-display font-800 ${trade.side === "buy" ? "text-rose-300" : "text-emerald-300"}`}>
-                        {trade.side === "buy" ? "-" : "+"}{formatCurrency(trade.totalValue)}
+                      <div className={`text-lg font-display font-800 ${(trade.cashImpact || 0) >= 0 ? "text-emerald-300" : "text-rose-300"}`}>
+                        {(trade.cashImpact || 0) >= 0 ? "+" : "-"}{formatCurrency(Math.abs(trade.cashImpact || 0))}
                       </div>
                       <p className="text-xs muted-text mt-1">{trade.platform}</p>
                     </div>
@@ -341,8 +360,10 @@ const Investments = () => {
             ) : (
               <div className="grid gap-3 max-h-[34rem] overflow-y-auto pr-1">
                 {investments.map((investment) => {
-                  const gain = (investment.currentValue || investment.amount) - investment.amount;
-                  const gainP = investment.amount ? ((gain / investment.amount) * 100).toFixed(1) : 0;
+                  const investedAmount = asNumber(investment.amount, 0);
+                  const currentValue = getCurrentValue(investment);
+                  const gain = currentValue - investedAmount;
+                  const gainP = investedAmount ? ((gain / investedAmount) * 100).toFixed(1) : 0;
                   const typeInfo = INVESTMENT_TYPES.find((type) => type.value === investment.type);
                   return (
                     <div
@@ -381,7 +402,7 @@ const Investments = () => {
                             </div>
 
                             <div className="md:text-right shrink-0">
-                              <div className="text-xl font-display font-800">{formatCurrency(investment.currentValue || investment.amount)}</div>
+                              <div className="text-xl font-display font-800">{formatCurrency(currentValue)}</div>
                               <div className={`text-xs mt-1 ${gain >= 0 ? "text-green-400" : "text-red-400"}`}>
                                 {gain >= 0 ? "+" : ""}{formatCurrency(gain)} ({gainP}%)
                               </div>
@@ -562,7 +583,13 @@ const Investments = () => {
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Input label="Quantity" type="number" placeholder="0" value={tradeForm.quantity} onChange={(e) => setTradeForm({ ...tradeForm, quantity: e.target.value })} />
-            <Input label="Price" type="number" placeholder="0" value={tradeForm.price} onChange={(e) => setTradeForm({ ...tradeForm, price: e.target.value })} />
+            <Input
+              label={tradeForm.executeLive ? "Price (optional for live market order)" : "Price"}
+              type="number"
+              placeholder={tradeForm.executeLive ? "Auto-filled from broker execution" : "0"}
+              value={tradeForm.price}
+              onChange={(e) => setTradeForm({ ...tradeForm, price: e.target.value })}
+            />
             <Input label="Fees" type="number" placeholder="0" value={tradeForm.fees} onChange={(e) => setTradeForm({ ...tradeForm, fees: e.target.value })} />
           </div>
           <Input label="Platform" placeholder="e.g. Zerodha, Groww, Paper Trading" value={tradeForm.platform} onChange={(e) => setTradeForm({ ...tradeForm, platform: e.target.value })} />
@@ -587,5 +614,3 @@ const Investments = () => {
 };
 
 export default Investments;
-
-

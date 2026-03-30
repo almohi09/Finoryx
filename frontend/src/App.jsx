@@ -1,23 +1,27 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
-import { useEffect } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import toast from "react-hot-toast";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AppLayout from "./components/layout/AppLayout";
 import { API_CONFIGURATION_ERROR } from "./constants";
 
-// Pages
-import Login from "./pages/Auth/Login";
-import Register from "./pages/Auth/Register";
-import Dashboard from "./pages/Dashboard/Dashboard";
-import Finance from "./pages/Finance/Finance";
-import Investments from "./pages/Investments/Investments";
-import Habits from "./pages/Habits/Habits";
-import Goals from "./pages/Goals/Goals";
-import Analytics from "./pages/Analytics/Analytics";
-import Admin from "./pages/Admin/Admin";
-import Account from "./pages/Account/Account";
+const Login = lazy(() => import("./pages/Auth/Login"));
+const Register = lazy(() => import("./pages/Auth/Register"));
+const Dashboard = lazy(() => import("./pages/Dashboard/Dashboard"));
+const Finance = lazy(() => import("./pages/Finance/Finance"));
+const Investments = lazy(() => import("./pages/Investments/Investments"));
+const Habits = lazy(() => import("./pages/Habits/Habits"));
+const Goals = lazy(() => import("./pages/Goals/Goals"));
+const Analytics = lazy(() => import("./pages/Analytics/Analytics"));
+const Advisor = lazy(() => import("./pages/Advisor/Advisor"));
+const Admin = lazy(() => import("./pages/Advisor/Admin/Admin"));
+const Account = lazy(() => import("./pages/Account/Account"));
+
+const RouteLoader = () => (
+  <div className="min-h-screen flex items-center justify-center muted-text text-sm">Loading...</div>
+);
 
 const App = () => {
   useEffect(() => {
@@ -49,35 +53,38 @@ const App = () => {
           }}
         />
 
-        <Routes>
-          {/* Public routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/" element={<Navigate to="/login" replace />} />
+        <Suspense fallback={<RouteLoader />}>
+          <Routes>
+            {/* Public routes */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/" element={<Navigate to="/login" replace />} />
 
-          {/* Protected routes */}
-          <Route element={<ProtectedRoute />}>
-            <Route element={<AppLayout />}>
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/finance" element={<Finance />} />
-              <Route path="/investments" element={<Investments />} />
-              <Route path="/habits" element={<Habits />} />
-              <Route path="/goals" element={<Goals />} />
-              <Route path="/analytics" element={<Analytics />} />
-              <Route path="/account" element={<Account />} />
+            {/* Protected routes */}
+            <Route element={<ProtectedRoute />}>
+              <Route element={<AppLayout />}>
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/finance" element={<Finance />} />
+                <Route path="/investments" element={<Investments />} />
+                <Route path="/habits" element={<Habits />} />
+                <Route path="/goals" element={<Goals />} />
+                <Route path="/analytics" element={<Analytics />} />
+                <Route path="/advisor" element={<Advisor />} />
+                <Route path="/account" element={<Account />} />
+              </Route>
             </Route>
-          </Route>
 
-          {/* Admin only */}
-          <Route element={<ProtectedRoute adminOnly />}>
-            <Route element={<AppLayout />}>
-              <Route path="/admin" element={<Admin />} />
+            {/* Admin only */}
+            <Route element={<ProtectedRoute adminOnly />}>
+              <Route element={<AppLayout />}>
+                <Route path="/admin" element={<Admin />} />
+              </Route>
             </Route>
-          </Route>
 
-          {/* 404 fallback */}
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
+            {/* 404 fallback */}
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </Suspense>
         </BrowserRouter>
     </AuthProvider>
   );

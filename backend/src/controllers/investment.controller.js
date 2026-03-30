@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const Investment = require("../models/investment.model");
 const TradeOrder = require("../models/tradeOrder.model");
-const { getAccount, getPositions, submitOrder, searchAssets } = require("../services/alpaca.service");
+const { getAccount, getPositions, getOrderById, submitOrder, searchAssets } = require("../services/alpaca.service");
 
 const toInvestmentResponse = (investment) => ({
   ...investment.toObject(),
@@ -88,8 +88,13 @@ const deleteInvestment = async (req, res, next) => {
 
 const toTradeOrderResponse = (order) => ({
   ...order.toObject(),
-  grossValue: order.quantity * order.price,
-  totalValue: order.quantity * order.price + (order.side === "buy" ? order.fees : -order.fees),
+  executionQuantity: order.filledQty > 0 ? order.filledQty : order.quantity,
+  executionPrice: order.filledAvgPrice > 0 ? order.filledAvgPrice : order.price,
+  grossValue: (order.filledQty > 0 ? order.filledQty : order.quantity) * (order.filledAvgPrice > 0 ? order.filledAvgPrice : order.price),
+  totalValue: ((order.filledQty > 0 ? order.filledQty : order.quantity) * (order.filledAvgPrice > 0 ? order.filledAvgPrice : order.price)) + (order.side === "buy" ? order.fees : -order.fees),
+  cashImpact: order.side === "buy"
+    ? -((((order.filledQty > 0 ? order.filledQty : order.quantity) * (order.filledAvgPrice > 0 ? order.filledAvgPrice : order.price)) + (order.fees || 0)))
+    : ((((order.filledQty > 0 ? order.filledQty : order.quantity) * (order.filledAvgPrice > 0 ? order.filledAvgPrice : order.price)) - (order.fees || 0))),
 });
 
 const getTradeOrders = async (req, res, next) => {
@@ -103,15 +108,19 @@ const getTradeOrders = async (req, res, next) => {
 
 const addTradeOrder = async (req, res, next) => {
   try {
+    const requestedQuantity = Number(req.body.quantity || 0);
+    const requestedPrice = Number(req.body.price || 0);
+    const fees = Number(req.body.fees || 0);
+
     let broker = "manual";
     let platform = req.body.platform || "Paper Trading";
     let brokerOrderId = "";
     let status = "filled";
     let liveExecution = false;
-    let filledQty = req.body.quantity;
-    let filledAvgPrice = req.body.price;
+    let filledQty = requestedQuantity;
+    let filledAvgPrice = requestedPrice;
     let rawBrokerResponse = null;
-    const clientOrderId = `fynorix-${req.user._id}-${Date.now()}`;
+    const clientOrderId = `fynvester-${req.user._id}-${Date.now()}`;
 
     if (req.body.executeLive) {
       const brokerOrder = await submitOrder({
@@ -128,10 +137,26 @@ const addTradeOrder = async (req, res, next) => {
       brokerOrderId = brokerOrder.id || "";
       status = brokerOrder.status || "accepted";
       liveExecution = true;
-      filledQty = Number(brokerOrder.filled_qty || req.body.quantity || 0);
-      filledAvgPrice = Number(brokerOrder.filled_avg_price || req.body.price || 0);
-      rawBrokerResponse = brokerOrder;
+      filledQty = Number(brokerOrder.filled_qty || requestedQuantity || 0);
+      filledAvgPrice = Number(brokerOrder.filled_avg_price || requestedPrice || 0);
+
+      if (brokerOrderId && (!filledQty || !filledAvgPrice)) {
+        try {
+          const refreshed = await getOrderById(brokerOrderId);
+          filledQty = Number(refreshed.filled_qty || filledQty || requestedQuantity || 0);
+          filledAvgPrice = Number(refreshed.filled_avg_price || filledAvgPrice || requestedPrice || 0);
+          status = refreshed.status || status;
+          rawBrokerResponse = refreshed;
+        } catch {
+          rawBrokerResponse = brokerOrder;
+        }
+      } else {
+        rawBrokerResponse = brokerOrder;
+      }
     }
+
+    const executedQuantity = filledQty > 0 ? filledQty : requestedQuantity;
+    const executedPrice = filledAvgPrice > 0 ? filledAvgPrice : requestedPrice;
 
     const order = await TradeOrder.create({
       userId: req.user._id,
@@ -139,17 +164,17 @@ const addTradeOrder = async (req, res, next) => {
       assetName: req.body.assetName,
       assetType: req.body.assetType,
       side: req.body.side,
-      quantity: req.body.quantity,
-      price: req.body.price,
-      fees: req.body.fees,
+      quantity: requestedQuantity,
+      price: executedPrice,
+      fees,
       platform,
       broker,
       brokerOrderId,
       status,
       timeInForce: req.body.timeInForce,
       liveExecution,
-      filledQty,
-      filledAvgPrice,
+      filledQty: executedQuantity,
+      filledAvgPrice: executedPrice,
       rawBrokerResponse,
       executedAt: req.body.executedAt || new Date(),
       notes: req.body.notes || "",
@@ -167,11 +192,25 @@ const getTradeSummary = async (req, res, next) => {
     const [buyTotals, sellTotals] = await Promise.all([
       TradeOrder.aggregate([
         { $match: { userId, side: "buy" } },
-        { $group: { _id: null, total: { $sum: { $add: [{ $multiply: ["$quantity", "$price"] }, "$fees"] } } } },
+        {
+          $project: {
+            effectiveQty: { $cond: [{ $gt: ["$filledQty", 0] }, "$filledQty", "$quantity"] },
+            effectivePrice: { $cond: [{ $gt: ["$filledAvgPrice", 0] }, "$filledAvgPrice", "$price"] },
+            fees: "$fees",
+          },
+        },
+        { $group: { _id: null, total: { $sum: { $add: [{ $multiply: ["$effectiveQty", "$effectivePrice"] }, "$fees"] } } } },
       ]),
       TradeOrder.aggregate([
         { $match: { userId, side: "sell" } },
-        { $group: { _id: null, total: { $sum: { $subtract: [{ $multiply: ["$quantity", "$price"] }, "$fees"] } } } },
+        {
+          $project: {
+            effectiveQty: { $cond: [{ $gt: ["$filledQty", 0] }, "$filledQty", "$quantity"] },
+            effectivePrice: { $cond: [{ $gt: ["$filledAvgPrice", 0] }, "$filledAvgPrice", "$price"] },
+            fees: "$fees",
+          },
+        },
+        { $group: { _id: null, total: { $sum: { $subtract: [{ $multiply: ["$effectiveQty", "$effectivePrice"] }, "$fees"] } } } },
       ]),
     ]);
 

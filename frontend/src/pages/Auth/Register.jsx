@@ -61,7 +61,7 @@ const Register = () => {
       });
       setStoredToken(data.token);
       login(data.user);
-      toast.success("Account created! Welcome to Fynorix");
+      toast.success("Account created! Welcome to Fynvester");
       navigate("/dashboard");
     } catch (err) {
       toast.error(err.response?.data?.message || "Registration failed");

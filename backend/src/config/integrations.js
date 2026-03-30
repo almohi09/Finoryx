@@ -10,6 +10,29 @@ const normalizeOpenAiBaseUrl = (value) => {
   return base || "https://api.openai.com/v1";
 };
 
+const normalizeAdvisorProvider = (value) => {
+  const provider = String(value || "").trim().toLowerCase();
+  if (["openai", "gemini", "openrouter"].includes(provider)) {
+    return provider;
+  }
+  return "openai";
+};
+
+const normalizeGeminiBaseUrl = (value) => {
+  const base = String(value || "https://generativelanguage.googleapis.com/v1beta").trim().replace(/\/+$/, "");
+  return base || "https://generativelanguage.googleapis.com/v1beta";
+};
+
+const normalizeGeminiModel = (value) => {
+  const model = String(value || "gemini-2.0-flash").trim();
+  return model.replace(/^models\//i, "") || "gemini-2.0-flash";
+};
+
+const normalizeOpenRouterBaseUrl = (value) => {
+  const base = String(value || "https://openrouter.ai/api/v1").trim().replace(/\/+$/, "");
+  return base || "https://openrouter.ai/api/v1";
+};
+
 const normalizeAlpacaBaseUrl = (value) => {
   const base = String(value || "https://paper-api.alpaca.markets").trim().replace(/\/+$/, "");
   return base.replace(/\/v2$/i, "");
@@ -46,6 +69,21 @@ const integrationConfig = {
     apiKey: process.env.OPENAI_API_KEY || "",
     model: (process.env.OPENAI_ADVISOR_MODEL || "gpt-4.1-mini").trim(),
     baseUrl: normalizeOpenAiBaseUrl(process.env.OPENAI_BASE_URL),
+  },
+  advisor: {
+    provider: normalizeAdvisorProvider(process.env.ADVISOR_PROVIDER),
+    gemini: {
+      enabled: required(process.env.GEMINI_API_KEY),
+      apiKey: process.env.GEMINI_API_KEY || "",
+      model: normalizeGeminiModel(process.env.GEMINI_ADVISOR_MODEL || "gemini-2.0-flash"),
+      baseUrl: normalizeGeminiBaseUrl(process.env.GEMINI_BASE_URL),
+    },
+    openrouter: {
+      enabled: required(process.env.OPENROUTER_API_KEY),
+      apiKey: process.env.OPENROUTER_API_KEY || "",
+      model: String(process.env.OPENROUTER_ADVISOR_MODEL || "openrouter/free").trim(),
+      baseUrl: normalizeOpenRouterBaseUrl(process.env.OPENROUTER_BASE_URL),
+    },
   },
 };
 

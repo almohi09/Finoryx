@@ -13,8 +13,10 @@ import { habitService } from "../../services/habit.service";
 
 const EMPTY_MONTHS = Array.from({ length: 6 }, (_, index) => {
   const date = new Date();
+  date.setDate(1);
   date.setMonth(date.getMonth() - (5 - index));
   return {
+    monthKey: `${date.getFullYear()}-${date.getMonth() + 1}`,
     month: date.toLocaleDateString("en-US", { month: "short" }),
     income: 0,
     expenses: 0,
@@ -106,8 +108,11 @@ const Analytics = () => {
 
       if (wealthRes.status === "fulfilled") {
         const incoming = wealthRes.value.data?.wealthGrowth || [];
+        const incomingByKey = new Map(
+          incoming.map((item) => [item.monthKey || item.month, item])
+        );
         const merged = EMPTY_MONTHS.map((month) => {
-          const match = incoming.find((item) => item.month === month.month);
+          const match = incomingByKey.get(month.monthKey) || incomingByKey.get(month.month);
           return match ? { ...month, ...match } : month;
         });
         setWealthData(merged);
@@ -249,24 +254,28 @@ const Analytics = () => {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b" style={{ borderColor: "var(--border)" }}>
-                {["Month", "Income", "Expenses", "Savings", "Net Worth"].map((h) => (
+                {["Month", "Income", "Expenses", "Savings", "Investments", "Net Worth"].map((h) => (
                   <th key={h} className="text-left py-3 pr-6 text-xs font-display font-600 muted-text uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {wealthData.map((row) => (
-                <tr key={row.month} className="border-b hover:bg-white/2 transition-colors" style={{ borderColor: "var(--border)" }}>
+                <tr key={row.monthKey || row.month} className="border-b hover:bg-white/2 transition-colors" style={{ borderColor: "var(--border)" }}>
                   <td className="py-3 pr-6 font-display font-600">{row.month}</td>
                   <td className="py-3 pr-6 text-green-400">{formatCurrency(row.income || 0)}</td>
                   <td className="py-3 pr-6 text-red-400">{formatCurrency(row.expenses || 0)}</td>
                   <td className="py-3 pr-6 font-display font-600">{formatCurrency(row.monthlySavings || 0)}</td>
+                  <td className="py-3 pr-6 text-amber-300">{formatCurrency(row.investments || 0)}</td>
                   <td className="py-3 pr-6 text-blue-400">{formatCurrency(row.netWorth || 0)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+        <p className="text-xs muted-text mt-3">
+          Investments include manual portfolio value plus net invested trade cash flow (buys increase, sells decrease).
+        </p>
       </Card>
     </div>
   );

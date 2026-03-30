@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { Trash2, Users, Activity, BarChart3, MessageSquare, Eye } from "lucide-react";
-import { adminService } from "../../services/admin.service";
-import { formatDate, formatCurrency } from "../../utils/helpers";
-import Card from "../../components/ui/Card";
-import Modal from "../../components/ui/Modal";
-import EmptyState from "../../components/ui/EmptyState";
+import { adminService } from "../../../services/admin.service";
+import { formatDate, formatCurrency } from "../../../utils/helpers";
+import Card from "../../../components/ui/Card";
+import Modal from "../../../components/ui/Modal";
+import EmptyState from "../../../components/ui/EmptyState";
 import toast from "react-hot-toast";
 
 const EMPTY_STATS = {

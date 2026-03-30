@@ -180,7 +180,7 @@ const validateBankAccount = (req, res, next) => {
 
 const validateTradeOrder = (req, res, next) => {
   const symbol = String(req.body.symbol || "").trim().toUpperCase();
-  const assetName = String(req.body.assetName || "").trim();
+  const assetName = String(req.body.assetName || "").trim() || symbol;
   const side = String(req.body.side || "buy").trim().toLowerCase();
   const assetType = String(req.body.assetType || "stock").trim().toLowerCase();
   const quantity = Number(req.body.quantity);
@@ -190,7 +190,11 @@ const validateTradeOrder = (req, res, next) => {
   const validAssetTypes = ["stock", "etf", "crypto", "mutual_fund", "bond", "other"];
   const timeInForce = String(req.body.timeInForce || req.body.time_in_force || "day").trim().toLowerCase();
   const validTimeInForce = ["day", "gtc", "opg", "cls", "ioc", "fok"];
-  const executeLive = Boolean(req.body.executeLive);
+  const executeLiveRaw = req.body.executeLive;
+  const executeLive = executeLiveRaw === true
+    || String(executeLiveRaw || "").trim().toLowerCase() === "true"
+    || String(executeLiveRaw || "").trim() === "1";
+  const parsedTradeDate = req.body.executedAt ? new Date(req.body.executedAt) : new Date();
 
   if (!symbol) {
     return res.status(400).json({ message: "Symbol is required" });
@@ -212,8 +216,12 @@ const validateTradeOrder = (req, res, next) => {
     return res.status(400).json({ message: "Quantity must be a positive number" });
   }
 
-  if (Number.isNaN(price) || price <= 0) {
-    return res.status(400).json({ message: "Price must be a positive number" });
+  if (!executeLive && (Number.isNaN(price) || price <= 0)) {
+    return res.status(400).json({ message: "Price must be a positive number for manual trades" });
+  }
+
+  if (executeLive && !Number.isNaN(price) && price < 0) {
+    return res.status(400).json({ message: "Price cannot be negative" });
   }
 
   if (Number.isNaN(fees) || fees < 0) {
@@ -224,7 +232,7 @@ const validateTradeOrder = (req, res, next) => {
     return res.status(400).json({ message: "Invalid time in force" });
   }
 
-  if (req.body.executedAt && Number.isNaN(Date.parse(req.body.executedAt))) {
+  if (Number.isNaN(parsedTradeDate.getTime())) {
     return res.status(400).json({ message: "Invalid trade date" });
   }
 
@@ -233,10 +241,11 @@ const validateTradeOrder = (req, res, next) => {
   req.body.side = side;
   req.body.assetType = assetType;
   req.body.quantity = quantity;
-  req.body.price = price;
+  req.body.price = Number.isNaN(price) ? 0 : price;
   req.body.fees = fees;
   req.body.timeInForce = timeInForce;
   req.body.executeLive = executeLive;
+  req.body.executedAt = parsedTradeDate;
   next();
 };
 

@@ -3,7 +3,7 @@ import { useAuth } from "../../context/AuthContext";
 import BrandLogo from "../branding/BrandLogo";
 import {
   LayoutDashboard, TrendingUp, Repeat2, Target,
-  BarChart3, ShieldCheck, LogOut, Wallet, ChevronRight, Settings,
+  BarChart3, ShieldCheck, LogOut, Wallet, ChevronRight, Settings, BrainCircuit,
 } from "lucide-react";
 
 const navItems = [
@@ -13,6 +13,7 @@ const navItems = [
   { to: "/habits", icon: Repeat2, label: "Habits" },
   { to: "/goals", icon: Target, label: "Goals" },
   { to: "/analytics", icon: BarChart3, label: "Analytics" },
+  { to: "/advisor", icon: BrainCircuit, label: "Advisor" },
   { to: "/account", icon: Settings, label: "Account" },
 ];
 
