@@ -1,4 +1,5 @@
 const required = (value) => typeof value === "string" && value.trim().length > 0;
+const missingEnvKeys = (keys = []) => keys.filter((key) => !required(process.env[key]));
 
 const normalizePlaidEnv = (value = "sandbox") => {
   const env = String(value || "sandbox").trim().toLowerCase();
@@ -41,6 +42,7 @@ const normalizeAlpacaBaseUrl = (value) => {
 const integrationConfig = {
   appEncryptionKey: process.env.APP_ENCRYPTION_KEY || "",
   plaid: {
+    missingEnv: missingEnvKeys(["PLAID_CLIENT_ID", "PLAID_SECRET"]),
     enabled: required(process.env.PLAID_CLIENT_ID) && required(process.env.PLAID_SECRET),
     clientId: process.env.PLAID_CLIENT_ID || "",
     secret: process.env.PLAID_SECRET || "",

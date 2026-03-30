@@ -11,7 +11,9 @@ const plaidBaseUrl = PLAID_BASE_URLS[integrationConfig.plaid.environment] || PLA
 
 const plaidRequest = async (path, body = {}) => {
   if (!integrationConfig.plaid.enabled) {
-    const err = new Error("Plaid integration is not configured");
+    const missing = integrationConfig.plaid.missingEnv || [];
+    const suffix = missing.length ? ` (missing: ${missing.join(", ")})` : "";
+    const err = new Error(`Plaid integration is not configured${suffix}`);
     err.statusCode = 503;
     throw err;
   }

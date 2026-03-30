@@ -2,7 +2,9 @@ const dns = require('dns');
 dns.setServers(['1.1.1.1']);
 
 const dotEnv = require('dotenv');
-dotEnv.config();
+const path = require("path");
+
+dotEnv.config({ path: path.resolve(__dirname, ".env") });
 
 const app = require('./src/app.js');
 const connectDb = require('./src/config/db');
