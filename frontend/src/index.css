@@ -29,6 +29,12 @@ html {
   scroll-behavior: smooth;
 }
 
+html,
+body,
+#root {
+  height: 100%;
+}
+
 body {
   font-family: "DM Sans", sans-serif;
   background-color: var(--bg-primary);
@@ -36,6 +42,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
+  overflow: hidden;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -177,6 +184,16 @@ h1, h2, h3, h4, h5, h6 {
     @apply h-full rounded-full transition-all duration-700;
     background: linear-gradient(90deg, var(--accent-gold), #fbbf24);
   }
+
+  .app-scroll,
+  .content-scroll {
+    scrollbar-gutter: stable;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .app-scroll {
+    overscroll-behavior-y: contain;
+  }
 }
 
 /* Animations */
@@ -199,4 +216,15 @@ h1, h2, h3, h4, h5, h6 {
 @keyframes fadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .animate-fade-up {
+    opacity: 1;
+    animation: none;
+  }
 }

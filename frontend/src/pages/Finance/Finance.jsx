@@ -183,15 +183,18 @@ const Finance = () => {
     if (modalType === "expense" && !form.description.trim()) return toast.error("Description is required");
     if (modalType === "income" && !form.source.trim()) return toast.error("Income source is required");
     if (!form.amount) return toast.error("Amount is required");
+    const normalizedAmount = asNumber(form.amount);
+    if (normalizedAmount <= 0) return toast.error("Amount must be greater than 0");
 
     setSaving(true);
     try {
       if (modalType === "expense") {
-        if (editItem) await financeService.updateExpense(editItem._id, form);
-        else await financeService.addExpense(form);
+        const expensePayload = { ...form, amount: normalizedAmount };
+        if (editItem) await financeService.updateExpense(editItem._id, expensePayload);
+        else await financeService.addExpense(expensePayload);
       } else {
         const incomePayload = {
-          amount: form.amount,
+          amount: normalizedAmount,
           date: form.date,
           notes: form.notes,
           source: form.source.trim(),
@@ -316,7 +319,7 @@ const Finance = () => {
     value: expenses.filter((item) => item.category === cat.value).reduce((sum, item) => sum + asNumber(item.amount), 0),
   })).filter((item) => item.value > 0);
   const summaryValues = { income: totalIncome, expense: totalExpense, balance, linkedBalance };
-  const savingsRate = totalIncome > 0 ? Math.max(0, Math.round((balance / totalIncome) * 100)) : 0;
+  const savingsRate = totalIncome > 0 ? Math.min(100, Math.max(0, Math.round((balance / totalIncome) * 100))) : 0;
   const topExpenseCategory = categoryData.slice().sort((a, b) => b.value - a.value)[0] || null;
 
   return (
@@ -421,19 +424,19 @@ const Finance = () => {
           <p className="text-xs uppercase tracking-[0.18em] muted-text font-display font-600">Actions</p>
           <p className="muted-text text-sm mt-1">Capture manual records fast, then connect accounts for automatic tracking.</p>
         </div>
-        <div className="flex gap-3">
-          <Button variant="ghost" size="sm" className="min-w-[5rem]" onClick={() => openAdd("expense")}>
+        <div className="flex flex-wrap gap-3 w-full md:w-auto">
+          <Button variant="ghost" size="sm" className="w-full sm:w-auto min-w-[5rem]" onClick={() => openAdd("expense")}>
             <Plus size={13} /> Add Expense
           </Button>
-          <Button variant="ghost" size="sm" className="min-w-[5rem]" onClick={() => openAdd("income")}>
+          <Button variant="ghost" size="sm" className="w-full sm:w-auto min-w-[5rem]" onClick={() => openAdd("income")}>
             <Plus size={13} /> Add Income
           </Button>
-          <Button variant="ghost" size="sm" className="min-w-[7rem]" loading={linkingPlaid} onClick={handlePlaidConnect}>
+          <Button variant="ghost" size="sm" className="w-full sm:w-auto min-w-[7rem]" loading={linkingPlaid} onClick={handlePlaidConnect}>
             <Landmark size={13} /> Connect Plaid
           </Button>
           <Button
             size="sm"
-            className="min-w-[7rem]"
+            className="w-full sm:w-auto min-w-[7rem]"
             onClick={() => {
               setInstitutionQuery(bankForm.institutionName || "");
               setInstitutionSearchOpen(false);
@@ -503,11 +506,13 @@ const Finance = () => {
             </span>
           </div>
 
-          <div className="space-y-3 max-h-[30rem] overflow-y-auto pr-1">
+          <div className="space-y-3 pr-1 content-scroll xl:max-h-[30rem] xl:overflow-y-auto">
             {bankTransactions.length === 0 ? (
               <div className="text-center py-8 muted-text text-sm">Sync a linked account to populate this feed</div>
             ) : bankTransactions.slice(0, 12).map((tx) => {
-              const isCredit = tx.direction === "credit";
+              const numericAmount = asNumber(tx.amount);
+              const isCredit = tx.direction ? tx.direction === "credit" : numericAmount >= 0;
+              const displayAmount = Math.abs(numericAmount);
               return (
                 <div key={tx._id} className="rounded-2xl border p-4" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
                   <div className="flex items-start justify-between gap-4">
@@ -519,7 +524,7 @@ const Finance = () => {
                       <p className="text-xs muted-text mt-2">{formatDate(tx.date)}</p>
                     </div>
                     <div className={`text-right text-lg font-display font-800 ${isCredit ? "text-emerald-300" : "text-rose-300"}`}>
-                      {isCredit ? "+" : "-"}{formatCurrency(tx.amount)}
+                      {isCredit ? "+" : "-"}{formatCurrency(displayAmount)}
                     </div>
                   </div>
                 </div>
@@ -601,7 +606,7 @@ const Finance = () => {
             ))}
           </div>
 
-          <div className="grid gap-3 max-h-[36rem] overflow-y-auto pr-1">
+          <div className="grid gap-3 pr-1 content-scroll xl:max-h-[36rem] xl:overflow-y-auto">
             {displayed.length === 0 ? (
               <div className="text-center py-8 muted-text text-sm">No transactions yet</div>
             ) : displayed.map((tx) => {
@@ -612,6 +617,7 @@ const Finance = () => {
               const metaLabel = tx.type === "income" ? "Income" : categoryInfo.label;
               const badgeClass = tx.type === "income" ? "badge-green" : "badge-red";
               const amountClass = tx.type === "income" ? "text-emerald-300" : "text-rose-300";
+              const amountValue = Math.abs(asNumber(tx.amount));
 
               return (
                 <div
@@ -630,7 +636,7 @@ const Finance = () => {
                       <span className={badgeClass}>{tx.type === "income" ? "Income" : "Expense"}</span>
                       <span className="text-xs muted-text">{formatDate(tx.date || tx.createdAt)}</span>
                     </div>
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                       <button onClick={() => openEdit(tx, tx.type)} className="p-1.5 rounded-lg hover:bg-white/5 muted-text hover:text-white transition-colors">
                         <Pencil size={13} />
                       </button>
@@ -650,7 +656,7 @@ const Finance = () => {
 
                       <div className="md:text-right shrink-0">
                         <div className={`text-xl font-display font-800 ${amountClass}`}>
-                          {tx.type === "income" ? "+" : "-"}{formatCurrency(tx.amount)}
+                          {tx.type === "income" ? "+" : "-"}{formatCurrency(amountValue)}
                         </div>
                       </div>
                     </div>

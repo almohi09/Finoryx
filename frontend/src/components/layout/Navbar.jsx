@@ -7,15 +7,48 @@ import { getGreeting } from "../../utils/helpers";
 import NotificationPanel from "./NotificationPanel";
 import AdvisorPanel from "./AdvisorPanel";
 
-const Navbar = ({ onMenuToggle, onFeedbackClick }) => {
+const Navbar = ({ onMenuToggle, onFeedbackClick, scrollTargetRef }) => {
   const { user } = useAuth();
   const { unreadCount } = useNotifications();
   const location = useLocation();
   const isAdmin = user?.role === "admin";
   const [advisorOpen, setAdvisorOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [isHidden, setIsHidden] = useState(false);
   const advisorRef = useRef(null);
   const notificationsRef = useRef(null);
+
+  useEffect(() => {
+    const target = scrollTargetRef?.current;
+    if (!target) return;
+
+    let lastTop = target.scrollTop;
+    let ticking = false;
+
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+
+      requestAnimationFrame(() => {
+        const currentTop = target.scrollTop;
+        const delta = currentTop - lastTop;
+
+        if (currentTop <= 8) {
+          setIsHidden(false);
+        } else if (Math.abs(delta) > 6) {
+          setIsHidden(delta > 0);
+        }
+
+        lastTop = currentTop;
+        ticking = false;
+      });
+    };
+
+    target.addEventListener("scroll", onScroll, { passive: true });
+    return () => target.removeEventListener("scroll", onScroll);
+  }, [scrollTargetRef]);
+
+  const shouldHideNavbar = isHidden && !advisorOpen && !notificationsOpen;
 
   useEffect(() => {
     const handlePointerDown = (event) => {
@@ -69,7 +102,7 @@ const Navbar = ({ onMenuToggle, onFeedbackClick }) => {
 
   return (
     <header
-      className="h-14 flex items-center justify-between px-4 md:px-6 border-b sticky top-0 z-20"
+      className={`sticky top-0 z-20 h-14 shrink-0 flex items-center justify-between px-4 md:px-6 border-b backdrop-blur-md transition-transform duration-300 ${shouldHideNavbar ? "-translate-y-full" : "translate-y-0"}`}
       style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
     >
       <div className="flex items-center gap-3">
