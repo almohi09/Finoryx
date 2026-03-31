@@ -8,30 +8,23 @@ import { formatCurrency } from "../../utils/helpers";
 const Advisor = () => {
   const [health, setHealth] = useState(null);
   const [advisor, setAdvisor] = useState({ insights: [], summary: {}, metadata: {} });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [question, setQuestion] = useState("");
   const scope = "overall";
 
   const load = useCallback(async (silent = false) => {
     if (silent) setRefreshing(true);
-    else setLoading(true);
+    else setLoading(false);
 
     try {
-      const [healthRes, advisorRes] = await Promise.allSettled([
-        financeService.getAdvisorHealth(),
-        financeService.getAdvisorInsights({ scope }),
-      ]);
-
-      setHealth(healthRes.status === "fulfilled" ? healthRes.value.data : null);
-      setAdvisor(advisorRes.status === "fulfilled"
-        ? advisorRes.value.data
-        : { insights: [], summary: {}, metadata: {} });
+      const healthRes = await financeService.getAdvisorHealth();
+      setHealth(healthRes?.data || null);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [scope]);
+  }, []);
 
   useEffect(() => {
     load();
@@ -49,11 +42,13 @@ const Advisor = () => {
   const handleAsk = async () => {
     const cleanQuestion = question.trim();
     if (!cleanQuestion) return;
+    setLoading(true);
     setRefreshing(true);
     try {
       const { data } = await financeService.queryAdvisor({ scope, question: cleanQuestion });
       setAdvisor(data || { insights: [], summary: {}, metadata: {} });
     } finally {
+      setLoading(false);
       setRefreshing(false);
     }
   };
@@ -94,6 +89,7 @@ const Advisor = () => {
             />
             <Button size="sm" loading={refreshing} onClick={handleAsk}>Ask</Button>
           </div>
+          {!askedQuestion ? <p className="text-xs muted-text mt-2">No analysis runs automatically. Ask a question to generate output.</p> : null}
           {askedQuestion ? <p className="text-xs muted-text mt-2">Q: {askedQuestion}</p> : null}
         </div>
       </Card>
@@ -182,7 +178,7 @@ const Advisor = () => {
           </div>
         ) : (
           <div className="text-sm muted-text py-8 text-center">
-            No advisor output yet. Check <code>/api/finance/advisor/health</code> and confirm provider config.
+            No advisor output yet. Ask a question to run analysis.
           </div>
         )}
       </Card>

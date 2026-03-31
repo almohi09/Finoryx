@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { BrainCircuit, RefreshCcw } from "lucide-react";
+import { BrainCircuit } from "lucide-react";
 import { financeService } from "../../services/finance.service";
 
 const toneStyles = {
@@ -15,13 +15,12 @@ const scopeTitle = (scope = "overall") => {
 };
 
 const AdvisorPanel = ({ scope = "overall", onClose }) => {
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [insights, setInsights] = useState([]);
-  const [source, setSource] = useState("rules");
+  const [source, setSource] = useState("manual");
   const [resolvedScope, setResolvedScope] = useState(scope);
-  const [note, setNote] = useState("");
+  const [note, setNote] = useState("Ask a question to generate advisor insights.");
   const [question, setQuestion] = useState("");
   const [askedQuestion, setAskedQuestion] = useState("");
 
@@ -30,53 +29,35 @@ const AdvisorPanel = ({ scope = "overall", onClose }) => {
     []
   );
 
-  const load = useCallback(async (silent = false) => {
-    if (silent) setRefreshing(true);
-    else setLoading(true);
-    setError("");
-
-    try {
-      const { data } = await financeService.getAdvisorInsights({ scope });
-      setInsights(data?.insights || []);
-      setSource(data?.metadata?.source || "rules");
-      setResolvedScope(data?.metadata?.scope || scope);
-      setAskedQuestion(data?.metadata?.question || "");
-      setNote(data?.metadata?.note || "");
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to load advisor insights");
-      setInsights([]);
-      setResolvedScope(scope);
-      setAskedQuestion("");
-      setNote("");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [scope]);
-
-  const handleAsk = async () => {
-    const cleanQuestion = question.trim();
+  const runQuery = async (inputQuestion) => {
+    const cleanQuestion = String(inputQuestion || "").trim();
     if (!cleanQuestion) return;
 
-    setRefreshing(true);
+    setLoading(true);
     setError("");
+
     try {
       const { data } = await financeService.queryAdvisor({ scope, question: cleanQuestion });
       setInsights(data?.insights || []);
-      setSource(data?.metadata?.source || "rules");
+      setSource(data?.metadata?.source || "manual");
       setResolvedScope(data?.metadata?.scope || scope);
       setAskedQuestion(data?.metadata?.question || cleanQuestion);
       setNote(data?.metadata?.note || "");
     } catch (err) {
       setError(err.response?.data?.message || "Failed to ask advisor");
+      setInsights([]);
+      setResolvedScope(scope);
+      setNote("Ask a question to generate advisor insights.");
     } finally {
-      setRefreshing(false);
+      setLoading(false);
     }
   };
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  const handleAsk = async () => {
+    const cleanQuestion = question.trim();
+    if (!cleanQuestion) return;
+    await runQuery(cleanQuestion);
+  };
 
   return (
     <div
@@ -94,13 +75,6 @@ const AdvisorPanel = ({ scope = "overall", onClose }) => {
               Scope: {scopeTitle(resolvedScope)} | Source: {source}
             </p>
           </div>
-          <button
-            onClick={() => load(true)}
-            className="p-2 rounded-lg hover:bg-white/5 muted-text hover:text-white transition-colors"
-            title="Refresh advisor"
-          >
-            <RefreshCcw size={14} className={refreshing ? "animate-spin" : ""} />
-          </button>
         </div>
       </div>
 
@@ -126,8 +100,9 @@ const AdvisorPanel = ({ scope = "overall", onClose }) => {
                 onClick={handleAsk}
                 className="px-3 h-9 rounded-lg text-xs font-display font-700"
                 style={{ background: "var(--accent-gold)", color: "var(--bg-primary)" }}
+                disabled={loading}
               >
-                Ask
+                {loading ? "Asking..." : "Ask"}
               </button>
             </div>
             {askedQuestion ? <p className="text-[11px] muted-text mt-2">Q: {askedQuestion}</p> : null}
